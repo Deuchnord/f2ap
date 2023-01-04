@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "f2ap"
+version = "0.1.0"
+description = "Put your website on the Fediverse thanks to your RSS/Atom feed"
+keywords = ["f2ap", "activitypub", "blog", "rss", "atom"]
+authors = ["Jérôme Deuchnord <jerome@deuchnord.fr>"]
+repository = "https://github.com/Deuchnord/f2ap"
+license = "AGPL-3.0-or-later"
+readme = "README.md"
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Framework :: FastAPI",
+    "Topic :: Communications",
+    "Topic :: Internet :: WWW/HTTP",
+]
+
+[tool.poetry.scripts]
+f2ap = "f2ap.__main__:main"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+feedparser = "^6.0"
+toml = "^0.10.2"
+fastapi = "^0.88.0"
+uvicorn = {extras = ["standard"], version = "^0.20.0"}
+pyhumps = "^3.8.0"
+requests = "^2.28.1"
+pycryptodome = "^3.16.0"
+markdown = "^3.4.1"
+mdx-linkify = "^2.1"
+pydantic = "^1.10.2"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
