@@ -54,10 +54,6 @@ class UpdateFeedThread(Thread):
             logging.debug("No article known, fetching all the articles.")
 
         feed = feedparser.parse(self.config.website.feed, sanitize_html=True)
-        if "bozo" in feed and feed.bozo == 1:
-            raise IOError(
-                "The provided feed seems to have an incorrect format. Please check it is a valid RSS or Atom feed."
-            )
 
         messages = []
 
