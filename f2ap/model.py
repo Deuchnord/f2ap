@@ -159,7 +159,7 @@ class Actor(BaseModel):
     def make(cls, actor: ConfigActor):
         return cls(
             id=actor.id,
-            url=actor.config.url,
+            url=actor.config.website.url,
             preferredUsername=actor.preferred_username,
             name=actor.display_name,
             summary=Markdown(actor.summary),
