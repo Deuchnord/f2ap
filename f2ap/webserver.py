@@ -106,6 +106,8 @@ def start_server(
 
     @app.middleware("http")
     async def on_request(request: Request, call_next):
+        logging.debug(f"{request.method} {request.url} with headers: {dict(request.headers)}")
+
         # If the server has just started, follow the users specified in the configuration.
         if not skip_following and start_server.following is None:
             start_server.following = []
@@ -281,6 +283,7 @@ def start_server(
                 f"Could not validate signature: {e.args[0]}. Request rejected."
             )
             logging.debug(f"Headers: {request.headers}")
+            logging.debug(f"Public key: {public_key_pem}")
             logging.debug(inbox)
             return Response(str(e), status_code=401)
 
