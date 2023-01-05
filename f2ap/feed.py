@@ -22,7 +22,9 @@ class UpdateFeedThread(Thread):
     def run(self) -> None:
         self.stop = False
         while not self.stop:
-            activitypub.propagate_messages(self.config, self.get_inboxes(), self.update())
+            activitypub.propagate_messages(
+                self.config, self.get_inboxes(), self.update()
+            )
             i = 0
 
             # we make smaller sleeps to prevent the thread being stuck when the app is stopped.
@@ -35,7 +37,9 @@ class UpdateFeedThread(Thread):
             actor = activitypub.get_actor(follower)
 
             if actor is None:
-                logging.warning(f"Could not get inbox for user {actor}, they won't receive the message.")
+                logging.warning(
+                    f"Could not get inbox for user {actor}, they won't receive the message."
+                )
                 continue
 
             yield actor["inbox"]
@@ -51,7 +55,9 @@ class UpdateFeedThread(Thread):
 
         feed = feedparser.parse(self.config.website.feed, sanitize_html=True)
         if "bozo" in feed and feed.bozo == 1:
-            raise IOError("The provided feed seems to have an incorrect format. Please check it is a valid RSS or Atom feed.")
+            raise IOError(
+                "The provided feed seems to have an incorrect format. Please check it is a valid RSS or Atom feed."
+            )
 
         messages = []
 
@@ -73,7 +79,9 @@ class UpdateFeedThread(Thread):
             if last_dt is not None and published <= last_dt:
                 continue
 
-            logging.debug(f'New article: "{item.title}", published on {published.isoformat()} ({item.link})')
+            logging.debug(
+                f'New article: "{item.title}", published on {published.isoformat()} ({item.link})'
+            )
             hashtags, tags = self.make_tags(tag["label"] for tag in item.tags)
 
             message = self.parse_hashtags(
@@ -87,7 +95,9 @@ class UpdateFeedThread(Thread):
                 )
             )
 
-            note, note_uuid = self.db.insert_note(message, published, item.link, tags=tags)
+            note, note_uuid = self.db.insert_note(
+                message, published, item.link, tags=tags
+            )
             logging.debug("Note saved: %s" % note_uuid)
             message = self.db.insert_message(note_uuid)
             logging.debug("Message saved: %s" % message.id)
@@ -108,11 +118,13 @@ class UpdateFeedThread(Thread):
             hashtags_in_msg.append(f"#{formatted_tag}")
             tags_list.append(formatted_tag)
 
-        return ' '.join(hashtags_in_msg), tags_list
+        return " ".join(hashtags_in_msg), tags_list
 
     def parse_hashtags(self, msg: str) -> (str, [str]):
         new_msg = msg
         for hashtag in find_hashtags(msg):
-            new_msg = new_msg.replace(f"#{hashtag}", f"[#{hashtag}](https://{self.config.url}/tags/{hashtag})")
+            new_msg = new_msg.replace(
+                f"#{hashtag}", f"[#{hashtag}](https://{self.config.url}/tags/{hashtag})"
+            )
 
         return new_msg

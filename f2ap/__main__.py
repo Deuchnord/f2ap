@@ -30,14 +30,11 @@ def main() -> int:
     update_feed_thread = UpdateFeedThread(config, db)
     update_feed_thread.start()
 
-    logging.info(f"Profile discoverable at @{config.actor.preferred_username}@{config.url}")
-
-    start_server(
-        config,
-        args.webserver_port,
-        args.log_level,
-        args.skip_following
+    logging.info(
+        f"Profile discoverable at @{config.actor.preferred_username}@{config.url}"
     )
+
+    start_server(config, args.webserver_port, args.log_level, args.skip_following)
 
     update_feed_thread.stop = True
 
@@ -46,20 +43,36 @@ def main() -> int:
 
 def configure_logging(log_level: str):
     logging.basicConfig(
-        format="%(levelname)s:     [%(module)s] %(message)s",
-        level=log_level
+        format="%(levelname)s:     [%(module)s] %(message)s", level=log_level
     )
 
 
 def get_args():
     args = ArgumentParser()
-    args.add_argument("--config", dest="config_file", type=str, help="Path to a configuration file", required=True)
-    args.add_argument('--log-level', dest='log_level', type=str, choices=["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"], default="INFO")
-    args.add_argument('--port', dest='webserver_port', type=int, default=8000)
-    args.add_argument('--skip-following', dest='skip_following', action="store_true", help="Prevent following the accounts defined in the configuration file. Useful for development tests.")
+    args.add_argument(
+        "--config",
+        dest="config_file",
+        type=str,
+        help="Path to a configuration file",
+        required=True,
+    )
+    args.add_argument(
+        "--log-level",
+        dest="log_level",
+        type=str,
+        choices=["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"],
+        default="INFO",
+    )
+    args.add_argument("--port", dest="webserver_port", type=int, default=8000)
+    args.add_argument(
+        "--skip-following",
+        dest="skip_following",
+        action="store_true",
+        help="Prevent following the accounts defined in the configuration file. Useful for development tests.",
+    )
 
     return args.parse_args()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())

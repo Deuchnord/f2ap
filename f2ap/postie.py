@@ -43,13 +43,11 @@ def deliver(config: Configuration, inbox: str, message: dict):
         "Accept": "application/activity+json",
     }
 
-    headers["Signature"] = signature.sign_headers(
-        config,
-        parsed_inbox.path,
-        headers
-    )
+    headers["Signature"] = signature.sign_headers(config, parsed_inbox.path, headers)
 
-    req = requests.post(inbox, data=json.dumps(message, cls=ActivityJsonEncoder), headers=headers)
+    req = requests.post(
+        inbox, data=json.dumps(message, cls=ActivityJsonEncoder), headers=headers
+    )
 
     try:
         req.raise_for_status()

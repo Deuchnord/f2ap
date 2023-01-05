@@ -33,7 +33,7 @@ class Actor:
         avatar: str = None,
         header: str = None,
         followings: [str] = None,
-        attachments: {str: str} = None
+        attachments: {str: str} = None,
     ):
         self.config = config
         self.preferred_username = username
@@ -81,7 +81,10 @@ class Message:
         self.format = format
 
         if tag_format not in valid_tag_formats:
-            raise ValueError("Invalid tag format, must be one of the following: %s" % ', '.join(valid_tag_formats))
+            raise ValueError(
+                "Invalid tag format, must be one of the following: %s"
+                % ", ".join(valid_tag_formats)
+            )
 
         self.tag_format = tag_format
 

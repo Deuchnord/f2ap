@@ -38,8 +38,17 @@ class FollowThread(threading.Thread):
 
 class ActivityJSONResponse(JSONResponse):
     """A special version of JSONResponse, with the good media type."""
-    def __init__(self, content: Any = None, status_code: int = 200, headers: {str: str} = None, background: BackgroundTasks = None):
-        super().__init__(content, status_code, headers, "application/activity+json", background)
+
+    def __init__(
+        self,
+        content: Any = None,
+        status_code: int = 200,
+        headers: {str: str} = None,
+        background: BackgroundTasks = None,
+    ):
+        super().__init__(
+            content, status_code, headers, "application/activity+json", background
+        )
 
     def render(self, content: Any) -> bytes:
         return json.dumps(
@@ -65,7 +74,7 @@ def get_activitypub_decorator(self: FastAPI):
         responds_with: Any = None,
         method: str = "get",
         ignore_unset: bool = False,
-        status_code: int = 200
+        status_code: int = 200,
     ):
         def f(coroutine):
             return self.add_api_route(
@@ -75,7 +84,7 @@ def get_activitypub_decorator(self: FastAPI):
                 methods=[method],
                 response_class=ActivityJSONResponse,
                 response_model_exclude_unset=ignore_unset,
-                response_model=responds_with
+                response_model=responds_with,
             )
 
         return f
@@ -83,7 +92,9 @@ def get_activitypub_decorator(self: FastAPI):
     return decorator
 
 
-def start_server(config: Configuration, port: int, log_level: str, skip_following: bool = False):
+def start_server(
+    config: Configuration, port: int, log_level: str, skip_following: bool = False
+):
     app = FastAPI(docs_url=None)
     app.activitypub = get_activitypub_decorator(app)
     db = Database(config)
@@ -115,10 +126,15 @@ def start_server(config: Configuration, port: int, log_level: str, skip_followin
 
     @app.get("/robots.txt")
     async def robots() -> Response:
-        return Response(headers={"Content-Type": "text/plain"}, content="\n".join([
-            "User-agent: *",
-            "Allow: /",
-        ]))
+        return Response(
+            headers={"Content-Type": "text/plain"},
+            content="\n".join(
+                [
+                    "User-agent: *",
+                    "Allow: /",
+                ]
+            ),
+        )
 
     @app.get("/.well-known/webfinger")
     async def webfinger(resource: Union[str, None]) -> Response:
@@ -126,23 +142,29 @@ def start_server(config: Configuration, port: int, log_level: str, skip_followin
         if resource is None or resource != subject:
             return Response(status_code=404)
 
-        return JSONResponse(media_type="application/jrd+json", content={
-            "subject": subject,
-            "links": [
-                {
-                    "rel": "self",
-                    "type": "application/activity+json",
-                    "href": config.actor.id,
-                }
-            ]
-        })
+        return JSONResponse(
+            media_type="application/jrd+json",
+            content={
+                "subject": subject,
+                "links": [
+                    {
+                        "rel": "self",
+                        "type": "application/activity+json",
+                        "href": config.actor.id,
+                    }
+                ],
+            },
+        )
 
     @app.activitypub("/actors/{username}")
     async def get_actor(username: str, request: Request):
         if username != config.actor.preferred_username:
             return Response(status_code=404)
 
-        if request.headers.get("Accept").split(",")[0].strip() != "application/activity+json":
+        if (
+            request.headers.get("Accept").split(",")[0].strip()
+            != "application/activity+json"
+        ):
             return RedirectResponse(config.website.url, status_code=301)
 
         return respond(Actor.make(config.actor))
@@ -175,7 +197,11 @@ def start_server(config: Configuration, port: int, log_level: str, skip_followin
         with open(config.actor.header, "rb") as file:
             return Response(file.read(), headers={"Content-Type": file_type})
 
-    @app.activitypub("/actors/{username}/following", ignore_unset=True, responds_with=OrderedCollection)
+    @app.activitypub(
+        "/actors/{username}/following",
+        ignore_unset=True,
+        responds_with=OrderedCollection,
+    )
     async def get_following(username, page: Optional[int] = 0) -> Response:
         if username != config.actor.preferred_username:
             return Response(status_code=404)
@@ -188,16 +214,24 @@ def start_server(config: Configuration, port: int, log_level: str, skip_followin
             OrderedCollection.make(f"{config.actor.id}/following", following, page)
         )
 
-    @app.activitypub("/actors/{username}/followers", ignore_unset=True, responds_with=OrderedCollection)
+    @app.activitypub(
+        "/actors/{username}/followers",
+        ignore_unset=True,
+        responds_with=OrderedCollection,
+    )
     async def get_followers(username: str, page: Optional[int] = 0):
         if username != config.actor.preferred_username:
             return Response(status_code=404)
 
         return respond(
-            OrderedCollection.make(f"{config.actor.id}/followers", db.get_followers(), page)
+            OrderedCollection.make(
+                f"{config.actor.id}/followers", db.get_followers(), page
+            )
         )
 
-    @app.activitypub("/actors/{username}/outbox", ignore_unset=True, responds_with=OrderedCollection)
+    @app.activitypub(
+        "/actors/{username}/outbox", ignore_unset=True, responds_with=OrderedCollection
+    )
     async def get_outbox(username: str, page: Optional[int] = None):
         if username != config.actor.preferred_username:
             return Response(status_code=404)
@@ -207,14 +241,18 @@ def start_server(config: Configuration, port: int, log_level: str, skip_followin
         )
 
     @app.activitypub("/actors/{username}/inbox", method="POST", status_code=202)
-    async def post_inbox(username: str, request: Request, background_tasks: BackgroundTasks) -> Union[None, Response]:
+    async def post_inbox(
+        username: str, request: Request, background_tasks: BackgroundTasks
+    ) -> Union[None, Response]:
         if username != config.actor.preferred_username:
             return Response(status_code=404)
 
         body = await request.body()
 
         expected_digest = request.headers.get("digest")
-        actual_digest = f"SHA-256={base64.b64encode(hashlib.sha256(body).digest()).decode()}"
+        actual_digest = (
+            f"SHA-256={base64.b64encode(hashlib.sha256(body).digest()).decode()}"
+        )
         if actual_digest != expected_digest:
             logging.debug(f"Expected digest from header: {expected_digest}")
             logging.debug(f"Actual computed digest: {actual_digest}")
@@ -223,12 +261,16 @@ def start_server(config: Configuration, port: int, log_level: str, skip_followin
         inbox = await request.json()
 
         try:
-            actor = requests.get(inbox.get("actor"), headers={"Accept": ACTIVITY_JSON_MIME_TYPE})
+            actor = requests.get(
+                inbox.get("actor"), headers={"Accept": ACTIVITY_JSON_MIME_TYPE}
+            )
             actor.raise_for_status()
             actor = actor.json()
             actor_inbox = actor.get("inbox")
         except requests.exceptions.HTTPError:
-            if inbox.get("type") == "Delete" and inbox.get("actor") == inbox.get("object"):
+            if inbox.get("type") == "Delete" and inbox.get("actor") == inbox.get(
+                "object"
+            ):
                 db.delete_follower(inbox.get("object"))
 
             return
@@ -237,9 +279,13 @@ def start_server(config: Configuration, port: int, log_level: str, skip_followin
             public_key_pem = actor.get("publicKey", {}).get("publicKeyPem")
             if public_key_pem is None:
                 raise ValueError("Missing public key on actor.")
-            signature.validate_headers(public_key_pem, dict(request.headers), f"/actors/{username}/inbox")
+            signature.validate_headers(
+                public_key_pem, dict(request.headers), f"/actors/{username}/inbox"
+            )
         except ValueError as e:
-            logging.debug(f"Could not validate signature: {e.args[0]}. Request rejected.")
+            logging.debug(
+                f"Could not validate signature: {e.args[0]}. Request rejected."
+            )
             logging.debug(f"Headers: {request.headers}")
             logging.debug(inbox)
             return Response(str(e), status_code=401)
@@ -248,19 +294,26 @@ def start_server(config: Configuration, port: int, log_level: str, skip_followin
 
         if inbox.get("type") == "Follow":
             db.insert_follower(inbox.get("actor"))
-            activity_response = {
-                "type": "Accept",
-                "object": inbox
-            }
-        elif inbox.get("type") == "Accept" and inbox.get("object", {}).get("type") == "Follow":
-            start_server.following.append((inbox.get("object").get("id"), inbox.get("actor")))
+            activity_response = {"type": "Accept", "object": inbox}
+        elif (
+            inbox.get("type") == "Accept"
+            and inbox.get("object", {}).get("type") == "Follow"
+        ):
+            start_server.following.append(
+                (inbox.get("object").get("id"), inbox.get("actor"))
+            )
             logging.debug(f"Following {inbox.get('actor')} successful.")
-        elif inbox.get("type") == "Undo" and inbox.get("object", {}).get("type") == "Follow":
+        elif (
+            inbox.get("type") == "Undo"
+            and inbox.get("object", {}).get("type") == "Follow"
+        ):
             db.delete_follower(inbox.get("actor"))
 
         if activity_response is not None:
             activity_response["@context"] = W3C_ACTIVITY_STREAM
-            background_tasks.add_task(postie.deliver, config, actor_inbox, activity_response)
+            background_tasks.add_task(
+                postie.deliver, config, actor_inbox, activity_response
+            )
 
         return
 
@@ -268,4 +321,10 @@ def start_server(config: Configuration, port: int, log_level: str, skip_followin
     async def get_messages(uuid: UUID):
         return respond(db.get_message(uuid))
 
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level=log_level.lower(), headers=[("server", "f2ap")])
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=port,
+        log_level=log_level.lower(),
+        headers=[("server", "f2ap")],
+    )

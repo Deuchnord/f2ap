@@ -7,8 +7,12 @@ from Crypto.PublicKey import RSA
 from .config import Configuration
 
 
-def sign_headers(config: Configuration, request_target: str, headers: dict, http_method: str = "post") -> str:
-    signed_headers = ["(request-target)"] + list(map(lambda s: s.lower(), headers.keys()))
+def sign_headers(
+    config: Configuration, request_target: str, headers: dict, http_method: str = "post"
+) -> str:
+    signed_headers = ["(request-target)"] + list(
+        map(lambda s: s.lower(), headers.keys())
+    )
     to_sign = [f"(request-target): {http_method} {request_target}"]
 
     for header in headers:
@@ -21,15 +25,19 @@ def sign_headers(config: Configuration, request_target: str, headers: dict, http
 
     signature = base64.b64encode(signer.sign(hash)).decode()
 
-    return ",".join([
-        f'keyId="{config.actor.key_id}"',
-        'algorithm="rsa-sha256"',
-        f'headers="{" ".join(signed_headers)}"',
-        f'signature="{signature}"',
-    ])
+    return ",".join(
+        [
+            f'keyId="{config.actor.key_id}"',
+            'algorithm="rsa-sha256"',
+            f'headers="{" ".join(signed_headers)}"',
+            f'signature="{signature}"',
+        ]
+    )
 
 
-def validate_headers(public_key: str, headers: dict, request_target: str, http_method: str = "post"):
+def validate_headers(
+    public_key: str, headers: dict, request_target: str, http_method: str = "post"
+):
     signature_header = headers.get("signature")
 
     if signature_header is None:
@@ -44,12 +52,12 @@ def validate_headers(public_key: str, headers: dict, request_target: str, http_m
     signature_headers_to_validate = signature.get("headers").split(" ")
     for header in signature_headers_to_validate:
         if header == "(request-target)":
-            message.append(f'(request-target): {http_method} {request_target}')
+            message.append(f"(request-target): {http_method} {request_target}")
             continue
 
-        message.append(f'{header}: {headers.get(header)}')
+        message.append(f"{header}: {headers.get(header)}")
 
-    message = '\n'.join(message)
+    message = "\n".join(message)
 
     key = RSA.import_key(public_key)
     verifier = pkcs1_15.new(key)

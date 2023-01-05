@@ -42,14 +42,17 @@ class Markdown(str):
             one_paragraph=self.one_paragraph,
             nl2br=self.nl2br,
             autolink=self.autolink,
-            parse_fediverse_tags=self.parse_fediverse_tags
+            parse_fediverse_tags=self.parse_fediverse_tags,
         )
 
 
 def activitystream(*additional_contexts: str):
     def decorator(cls: type):
         if not issubclass(cls, BaseModel):
-            raise TypeError("Class %s must be a subclass of %s." % (cls.__name__, BaseModel.__name__))
+            raise TypeError(
+                "Class %s must be a subclass of %s."
+                % (cls.__name__, BaseModel.__name__)
+            )
 
         cls.old_dict = cls.dict
 
@@ -65,7 +68,8 @@ def activitystream(*additional_contexts: str):
             exclude_none=False,
         ):
             d = {
-                "@context": ["https://www.w3.org/ns/activitystreams"] + list(additional_contexts)
+                "@context": ["https://www.w3.org/ns/activitystreams"]
+                + list(additional_contexts)
             }
             for key, value in self.old_dict(
                 include=include,
@@ -74,7 +78,7 @@ def activitystream(*additional_contexts: str):
                 skip_defaults=skip_defaults,
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
-                exclude_none=exclude_none
+                exclude_none=exclude_none,
             ).items():
                 d[key] = value
 
@@ -97,7 +101,9 @@ class ImageFile(File):
     def from_file(cls, path: str, url: str):
         file_type, _ = mimetypes.guess_type(path, strict=True)
         if file_type.split("/")[0] != "image":
-            raise TypeError(f'Invalid file type for file "{path}". Check it is a valid image.')
+            raise TypeError(
+                f'Invalid file type for file "{path}". Check it is a valid image.'
+            )
 
         return cls(type="Image", mediaType=file_type, url=url)
 
@@ -209,9 +215,13 @@ class OrderedCollection(BaseModel):
     orderedItems: Optional[list] = None
 
     @classmethod
-    def make(cls, endpoint: str, items: [str], page: int = None, items_per_page: int = 10):
+    def make(
+        cls, endpoint: str, items: [str], page: int = None, items_per_page: int = 10
+    ):
         first_page = 1
-        last_page = int(len(items) / items_per_page) + (1 if len(items) % items_per_page > 0 else 0)
+        last_page = int(len(items) / items_per_page) + (
+            1 if len(items) % items_per_page > 0 else 0
+        )
 
         if page is None:
             page = 0
@@ -233,9 +243,11 @@ class OrderedCollection(BaseModel):
                 totalItems=len(items),
                 first=f"{endpoint}?page={first_page}",
                 last=f"{endpoint}?page={last_page}",
-                prev=f"{endpoint}?page={previous_page}" if previous_page is not None else None,
+                prev=f"{endpoint}?page={previous_page}"
+                if previous_page is not None
+                else None,
                 next=f"{endpoint}?page={next_page}" if next_page is not None else None,
-                orderedItems=ordered_items
+                orderedItems=ordered_items,
             )
 
         if len(items) > 0:

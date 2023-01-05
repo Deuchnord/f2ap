@@ -22,7 +22,9 @@ class FediverseTagsParser(Preprocessor):
         for line in lines:
             for username, domain in pattern.findall(line):
                 actor_id = f"https://{domain}/@{username}"
-                line = line.replace(f"@{username}@{domain}", f"[@{username}@{domain}]({actor_id})")
+                line = line.replace(
+                    f"@{username}@{domain}", f"[@{username}@{domain}]({actor_id})"
+                )
 
             _lines.append(line)
 
@@ -52,7 +54,9 @@ def parse_markdown(
 
     # Replace the "#" characters with &num; to prevent the markdown package to parse it as a title.
     # See https://github.com/Python-Markdown/markdown/blob/383de86c64101b8d14768d9a247c9efc97d703bd/tests/test_syntax/blocks/test_headers.py#L202-L207
-    md = _markdown(text.replace('#', '&num;').replace("&&num;", "&#"), extensions=extensions)
+    md = _markdown(
+        text.replace("#", "&num;").replace("&&num;", "&#"), extensions=extensions
+    )
 
     if one_paragraph:
         md = md.removeprefix("<p>").removesuffix("</p>")
