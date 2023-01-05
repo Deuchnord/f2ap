@@ -56,8 +56,8 @@ jobs:
               uses: docker/build-push-action@v3
               with:
                 push: true
-                tags:
-                    - deuchnord/f2ap:latest
-                    - deuchnord/f2ap:${{ steps.app_version.outputs.major }}
-                    - deuchnord/f2ap:${{ steps.app_version.outputs.minor }}
-                    - deuchnord/f2ap:${{ steps.app_version.outputs.patch }}
+                tags: |
+                    deuchnord/f2ap:latest
+                    deuchnord/f2ap:${{ steps.app_version.outputs.major }}
+                    deuchnord/f2ap:${{ steps.app_version.outputs.minor }}
+                    deuchnord/f2ap:${{ steps.app_version.outputs.patch }}
