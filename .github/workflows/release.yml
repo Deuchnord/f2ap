@@ -1,0 +1,63 @@
+name: Release
+
+on:
+    release:
+        types: [published]
+
+jobs:
+    pipy:
+        name: Build and release to PyPI
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                python-version: '3.x'
+            - name: Setup environment
+              run: |
+                sudo apt update
+                python -m pip install --upgrade pip poetry
+            - name: Build package
+              run: |
+                poetry install
+                poetry build
+            - name: Publish package
+              env:
+                POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_PASSWORD }}
+              run: |
+                poetry publish
+
+    docker:
+        name: Build and release to Docker
+        runs-on: ubuntu-latest
+        steps:
+            - id: app_version
+              env:
+                  TAG: ${{ github.ref_name }}
+              run: |
+                echo "major=$(echo $TAG | sed -E 's/^v([0-9]+)\.([0-9]+)\.([0-9]+)$/\1/')" >> $GITHUB_OUTPUT
+                echo "minor=$(echo $TAG | sed -E 's/^v([0-9]+)\.([0-9]+)\.([0-9]+)$/\1.\2/')" >> $GITHUB_OUTPUT
+                echo "patch=$(echo $TAG)" >> $GITHUB_OUTPUT
+
+            - name: Setup QEMU
+              uses: docker/setup-qemu-actions@v2
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v2
+
+            - name: Login to Docker Hub
+              uses: docker/login-action@v2
+              with:
+                username: ${{ secrets.DOCKERHUB_USERNAME }}
+                password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+            - name: Build and push
+              uses: docker/build-push-action@v3
+              with:
+                push: true
+                tags:
+                    - deuchnord/f2ap:latest
+                    - deuchnord/f2ap:${{ steps.app_version.outputs.major }}
+                    - deuchnord/f2ap:${{ steps.app_version.outputs.minor }}
+                    - deuchnord/f2ap:${{ steps.app_version.outputs.patch }}

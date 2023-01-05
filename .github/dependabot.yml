@@ -1,0 +1,20 @@
+version: 2
+
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    open-pull-requests-limit: 5
+    target-branch: main
+    schedule:
+      interval: daily
+    reviewers:
+      - Deuchnord
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    open-pull-requests-limit: 5
+    target-branch: main
+    schedule:
+      interval: weekly
+    reviewers:
+      - Deuchnord
