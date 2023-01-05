@@ -1,0 +1,13 @@
+version: "3"
+
+services:
+    f2ap:
+        image: f2ap
+        build:
+            dockerfile: Dockerfile
+            context: .
+        ports:
+            - "8000:80"
+        volumes:
+            # All the data of the app will be stored in this volume.
+            - "./data:/data"

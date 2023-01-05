@@ -8,7 +8,7 @@ EXPOSE 80
 
 WORKDIR /data
 
-COPY config.toml.dist config.toml
+COPY config.dist.toml config.toml
 
 WORKDIR /usr/src/app
 

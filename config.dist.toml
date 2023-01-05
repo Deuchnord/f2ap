@@ -1,0 +1,62 @@
+# The domain name of the ActivityPub API.
+# Ideally, should be the same as `website.url`.
+url = "example.com"
+
+# The database will be stored in this file.
+db = "/path/to/database.db"
+
+[website]
+# The URL you want to redirect if the user reaches the profile outside of the social platforms.
+url = "https://example.com/blog/"
+# A valid RSS or Atom resource that will feed the ActivityPub profile.
+feed = "https://example.com/feed.xml"
+# The update frequency, in minutes (defaults to 30 min)
+update_freq = 5
+
+# The actor is the user who will be displayed on the social networks.
+[actor]
+username = "blog"
+display_name = "The most perfect blog of the Web"
+avatar = "/path/to/avatar.png"
+header = "/path/to/header.jpg"
+summary = "Why make threads when you can have a blog? 👀"
+
+# A list of people you want the actor to follow, in `@username@example.com` format.
+# You can use this to recommend other people to follow, for instance.
+followings = [
+    "@me@example.com",
+    "@you@example.com",
+]
+
+# A pair of RSA keys used to sign the communications with the Fediverse applications.
+# Create them with the following commands:
+# openssl genrsa -out /path/to/private.pem 2048
+# openssl rsa -in /path/to/private.pem -outform PEM -pubout -out /path/to/public.pem
+#
+# It is safe to regenerate them anytime if your private key gets leaked. Don't forget to restart the server.
+public_key = "/path/to/public.pem"
+private_key = "/path/to/private.pem"
+
+# Attachments will typically be displayed in the table on the Mastodon profile.
+# You can put as many items as you want here, but keep in mind that each social platform has its own display limit.
+[actor.attachments]
+"Website" = "https://example.com"
+"Mastodon" = "@me@example.com"
+
+# The format is used to create the messages that will be displayed on the social platforms.
+# You can use Markdown to format your message (keep in mind the message may be sanitized by the social platforms).
+#
+# The following variables can be used:
+# - {title}: the title of the entry
+# - {url}: the entry URL
+# - {summary}: a brief summary of the entry (Atom feeds only)
+# - {author}: the name of the author of the entry
+# - {tags}: if the entry has tags defined, they will be formatted to hashtags and added here.
+#
+# Note: if a variable is not available, it will be replaced with nothing and a warning will be logged.
+[message]
+format = "[{title}]({url})\n{summary}\n{tags}"
+
+# Available formats: camelCase, CamelCase, snake_case
+# Default: camelCase
+tag_format = "camelCase"
