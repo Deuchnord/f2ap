@@ -78,7 +78,11 @@ class UpdateFeedThread(Thread):
             logging.debug(
                 f'New article: "{item.title}", published on {published.isoformat()} ({item.link})'
             )
-            hashtags, tags = self.make_tags(tag["label"] for tag in item.tags)
+
+            if "tags" in item:
+                hashtags, tags = self.make_tags(tag["label"] for tag in item.tags)
+            else:
+                hashtags, tags = "", []
 
             message = self.parse_hashtags(
                 self.config.message.format.format(
@@ -116,7 +120,7 @@ class UpdateFeedThread(Thread):
 
         return " ".join(hashtags_in_msg), tags_list
 
-    def parse_hashtags(self, msg: str) -> (str, [str]):
+    def parse_hashtags(self, msg: str) -> str:
         new_msg = msg
         for hashtag in find_hashtags(msg):
             new_msg = new_msg.replace(
