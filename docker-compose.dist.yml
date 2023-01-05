@@ -2,10 +2,7 @@ version: "3"
 
 services:
     f2ap:
-        image: f2ap
-        build:
-            dockerfile: Dockerfile
-            context: .
+        image: deuchnord/f2ap
         ports:
             - "8000:80"
         volumes:
