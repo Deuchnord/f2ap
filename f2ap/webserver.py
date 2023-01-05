@@ -117,8 +117,14 @@ def start_server(
             follow_task.start()
 
         # Check if user has asked for a known URL (e.g. the URL of a blog post)
-        note = db.get_note(url=str(request.url))
+        request_url = str(request.url)
+        if request_url.startswith("http://"):
+            request_url = request_url.replace("http://", "https://", 1)
+
+        logging.debug(f"Searching {request_url} in the notes")
+        note = db.get_note(url=request_url)
         if note is not None:
+            logging.debug("Note found!")
             return ActivityJSONResponse(note.dict())
 
         return await call_next(request)
