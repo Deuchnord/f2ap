@@ -157,15 +157,9 @@ def start_server(
         )
 
     @app.activitypub("/actors/{username}")
-    async def get_actor(username: str, request: Request):
+    async def get_actor(username: str):
         if username != config.actor.preferred_username:
             return Response(status_code=404)
-
-        if (
-            request.headers.get("Accept").split(",")[0].strip()
-            != "application/activity+json"
-        ):
-            return RedirectResponse(config.website.url, status_code=301)
 
         return respond(Actor.make(config.actor))
 
