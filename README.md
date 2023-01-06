@@ -3,6 +3,12 @@
 f2ap (_Feed to ActivityPub_) is a web application that uses the RSS/Atom feed of your website to expose it on the Fediverse
 through ActivityPub.
 
+## Social platform compatibility
+
+Even though ActivityPub is a generic protocol designed to be platform-agnostic, each social platform has its own particularities that f2ap has to comply with to be able to communicate with it.
+
+Check [the compatibility table](https://github.com/Deuchnord/f2ap/wiki/Social-platforms-compatibility) on the wiki to see the progression.
+
 ## How to use it
 
 ### Prerequisite
