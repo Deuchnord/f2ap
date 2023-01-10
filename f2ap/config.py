@@ -75,7 +75,9 @@ class Actor:
 
 
 class Message:
-    def __init__(self, format: str, tag_format: str = "camelCase", groups: [str] = None):
+    def __init__(
+        self, format: str, tag_format: str = "camelCase", groups: [str] = None
+    ):
         valid_tag_formats = self.get_tags_formatters().keys()
 
         self.format = format

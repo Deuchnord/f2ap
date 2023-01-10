@@ -182,10 +182,6 @@ class Actor(BaseModel):
         )
 
 
-class Group(Actor):
-    pass
-
-
 @activitystream()
 class Note(BaseModel):
     id: str

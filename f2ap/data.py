@@ -85,15 +85,19 @@ class Database:
 
         if current_db_version == 1:
             logging.debug("Upgrading from v1 to v2...")
-            self.execute("""
+            self.execute(
+                """
                 ALTER TABLE notes
                 ADD name VARCHAR(500)
-            """)
+            """
+            )
 
-            results = self.execute("""
+            results = self.execute(
+                """
                 SELECT uuid, url
                 FROM notes
-            """).fetchall()
+            """
+            ).fetchall()
 
             # We import them here to prevent importing useless libraries outside the upgrade path
             import requests
@@ -106,14 +110,19 @@ class Database:
                     r.raise_for_status()
                     soup = BeautifulSoup(r.text, features="html.parser")
 
-                    self.execute("""
+                    self.execute(
+                        """
                         UPDATE notes
                         SET name = :name
                         WHERE uuid = :uuid
-                    """, {"name": soup.title.string, "uuid": uuid})
+                    """,
+                        {"name": soup.title.string, "uuid": uuid},
+                    )
                 except requests.HTTPError as e:
-                    logging.warning(f"Could not update note at {url}: {e}."
-                                    f" It might be unreachable on some social application.")
+                    logging.warning(
+                        f"Could not update note at {url}: {e}."
+                        f" It might be unreachable on some social application."
+                    )
 
             logging.debug("Upgraded to v2!")
 
@@ -126,8 +135,10 @@ class Database:
         if current_db_version != DATABASE_VERSION:
             shutil.copyfile(backup, self.config.db)
 
-            raise ValueError(f"Database version mismatch after upgrade: expected {DATABASE_VERSION},"
-                             f" got {current_db_version}. The database has not been upgraded.")
+            raise ValueError(
+                f"Database version mismatch after upgrade: expected {DATABASE_VERSION},"
+                f" got {current_db_version}. The database has not been upgraded."
+            )
 
         logging.info("Upgrade finished! You can remove the backup safely.")
 
@@ -203,7 +214,7 @@ class Database:
             type=msg_type,
             actor=self.config.actor.id,
             published=note.published,
-            object=note
+            object=note,
         )
 
     def get_note(self, url: str) -> Optional[model.Note]:
