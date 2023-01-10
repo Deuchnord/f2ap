@@ -134,20 +134,8 @@ def start_server(
         if start_server.following is not None:
             activitypub.unfollow_users(config, start_server.following)
 
-    @app.get("/robots.txt")
-    async def robots() -> Response:
-        return Response(
-            headers={"Content-Type": "text/plain"},
-            content="\n".join(
-                [
-                    "User-agent: *",
-                    "Allow: /",
-                ]
-            ),
-        )
-
     @app.get("/.well-known/webfinger")
-    async def webfinger(resource: Union[str, None]) -> Response:
+    async def webfinger(resource: Union[str, None]):
         subject = f"acct:{config.actor.preferred_username}@{config.url}"
         if resource is None or resource != subject:
             return Response(status_code=404)
@@ -175,7 +163,7 @@ def start_server(
 
     @app.head("/actors/{username}/avatar")
     @app.get("/actors/{username}/avatar")
-    async def get_actor_avatar(username: str) -> Response:
+    async def get_actor_avatar(username: str):
         if username != config.actor.preferred_username or config.actor.avatar is None:
             return Response(status_code=404)
 
@@ -189,7 +177,7 @@ def start_server(
 
     @app.head("/actors/{username}/header")
     @app.get("/actors/{username}/header")
-    async def get_actor_header(username: str) -> Response:
+    async def get_actor_header(username: str):
         if username != config.actor.preferred_username or config.actor.header is None:
             return Response(status_code=404)
 
@@ -206,7 +194,7 @@ def start_server(
         ignore_unset=True,
         responds_with=OrderedCollection,
     )
-    async def get_following(username, page: Optional[int] = 0) -> Response:
+    async def get_following(username, page: Optional[int] = 0):
         if username != config.actor.preferred_username:
             return Response(status_code=404)
 
