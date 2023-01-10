@@ -111,7 +111,12 @@ class Link(Attachment):
         return cls(type="Link", href=href)
 
 
-class ImageFile(Attachment):
+class File(Attachment):
+    mediaType: str
+    url: str
+
+
+class ImageFile(File):
     @classmethod
     def from_file(cls, path: str, url: str):
         file_type, _ = mimetypes.guess_type(path, strict=True)
@@ -121,12 +126,6 @@ class ImageFile(Attachment):
             )
 
         return cls(type="Image", mediaType=file_type, url=url)
-
-
-class PropertyValue(BaseModel):
-    type: str = "PropertyValue"
-    name: str
-    value: Markdown
 
 
 class PublicKey(BaseModel):
@@ -156,7 +155,7 @@ class Actor(BaseModel):
     def make_attachments(cls, attachments: {str: str}) -> list[Attachment]:
         l = []
         for key, value in attachments.items():
-            l.append(Attachment.property_value(key, Markdown(value)))
+            l.append(PropertyValue.make(key, Markdown(value)))
 
         return l
 
@@ -183,10 +182,16 @@ class Actor(BaseModel):
         )
 
 
+class Group(Actor):
+    pass
+
+
 @activitystream()
 class Note(BaseModel):
     id: str
+    name: Optional[str]
     type: str = "Note"
+    mediaType: str = "text/html"
     inReplyTo: Optional[str]
     published: datetime
     url: str

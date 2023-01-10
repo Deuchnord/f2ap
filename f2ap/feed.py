@@ -44,6 +44,9 @@ class UpdateFeedThread(Thread):
 
             yield actor["inbox"]
 
+        for group in self.config.message.groups:
+            yield group
+
     def update(self):
         logging.info("Update started")
 

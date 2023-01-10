@@ -1,18 +1,20 @@
 import json
+import logging
 import sqlite3
-import markdown
+import shutil
 
 from datetime import datetime, timezone
 from uuid import uuid4, UUID
 from typing import Union, Optional
 from os.path import exists
+from hashlib import sha256
 
 from . import model
 from .config import Configuration
 
 W3C_PUBLIC_STREAM = "https://www.w3.org/ns/activitystreams#Public"
 
-DATABASE_VERSION = 1
+DATABASE_VERSION = 2
 
 
 class Database:
@@ -61,11 +63,73 @@ class Database:
         return self.get_database_version() <= DATABASE_VERSION
 
     def upgrade_database(self) -> bool:
-        """Returns True if the database has been upgraded"""
-        if self.get_database_version() == DATABASE_VERSION:
+        """Returns True if the database has been upgraded
+
+        Note: except for versions < 1.0 and major releases, modifying this function is forbidden,
+        as it means breaking backwards compatibility.
+        """
+        current_db_version = self.get_database_version()
+        if current_db_version == DATABASE_VERSION:
             return False
 
-        # Add upgrade instructions here
+        logging.info("Started upgrade database")
+
+        backup = f"{self.config.db}.{int(datetime.utcnow().timestamp())}.bak"
+        shutil.copyfile(self.config.db, backup)
+
+        logging.info(f"Database backed up to {backup}")
+
+        ##########################################
+        # BEGIN incremental upgrade instructions #
+        ##########################################
+
+        if current_db_version == 1:
+            logging.debug("Upgrading from v1 to v2...")
+            self.execute("""
+                ALTER TABLE notes
+                ADD name VARCHAR(500)
+            """)
+
+            results = self.execute("""
+                SELECT uuid, url
+                FROM notes
+            """).fetchall()
+
+            # We import them here to prevent importing useless libraries outside the upgrade path
+            import requests
+            from bs4 import BeautifulSoup
+
+            for uuid, url in results:
+                logging.debug(f"Updating note: {url}")
+                try:
+                    r = requests.get(url)
+                    r.raise_for_status()
+                    soup = BeautifulSoup(r.text, features="html.parser")
+
+                    self.execute("""
+                        UPDATE notes
+                        SET name = :name
+                        WHERE uuid = :uuid
+                    """, {"name": soup.title.string, "uuid": uuid})
+                except requests.HTTPError as e:
+                    logging.warning(f"Could not update note at {url}: {e}."
+                                    f" It might be unreachable on some social application.")
+
+            logging.debug("Upgraded to v2!")
+
+            current_db_version += 1
+
+        ########################################
+        # END incremental upgrade instructions #
+        ########################################
+
+        if current_db_version != DATABASE_VERSION:
+            shutil.copyfile(backup, self.config.db)
+
+            raise ValueError(f"Database version mismatch after upgrade: expected {DATABASE_VERSION},"
+                             f" got {current_db_version}. The database has not been upgraded.")
+
+        logging.info("Upgrade finished! You can remove the backup safely.")
 
         self.set_metadata("version", DATABASE_VERSION)
 
@@ -145,7 +209,7 @@ class Database:
     def get_note(self, url: str) -> Optional[model.Note]:
         query = self.execute(
             f"""
-            SELECT uuid, published_time, url, reply_to, content, tags
+            SELECT uuid, published_time, name, url, reply_to, content, tags
             FROM notes
             WHERE url = :url
         """,
@@ -155,16 +219,17 @@ class Database:
         if query is None:
             return None
 
-        uuid, published, url, reply_to, content, tags = query
+        uuid, published, name, url, reply_to, content, tags = query
 
         return model.Note(
             id=url,
+            name=name,
             in_reply_to=reply_to,
             published=datetime.fromtimestamp(published, tz=timezone.utc),
             url=url,
             attributedTo=self.config.actor.id,
             content=model.Markdown(content),
-            cc=[self.config.actor.followers_link],
+            cc=self.config.message.groups + [self.config.actor.followers_link],
             tag=json.loads(tags),
         )
 
