@@ -90,13 +90,28 @@ def activitystream(*additional_contexts: str):
     return decorator
 
 
-class File(BaseModel):
+class Attachment(BaseModel):
     type: str
-    mediaType: str
-    url: str
 
 
-class ImageFile(File):
+class PropertyValue(Attachment):
+    name: str
+    value: str
+
+    @classmethod
+    def make(cls, name: str, value: str):
+        return cls(type="PropertyValue", name=name, value=value)
+
+
+class Link(Attachment):
+    href: str
+
+    @classmethod
+    def make(cls, href: str):
+        return cls(type="Link", href=href)
+
+
+class ImageFile(Attachment):
     @classmethod
     def from_file(cls, path: str, url: str):
         file_type, _ = mimetypes.guess_type(path, strict=True)
@@ -114,16 +129,6 @@ class PropertyValue(BaseModel):
     value: Markdown
 
 
-class Attachment(BaseModel):
-    type: str
-    name: str
-    value: str
-
-    @classmethod
-    def property_value(cls, name: str, value: str):
-        return cls(type="PropertyValue", name=name, value=value)
-
-
 class PublicKey(BaseModel):
     id: str
     owner: str
@@ -138,8 +143,8 @@ class Actor(BaseModel):
     preferredUsername: str
     name: str
     summary: Markdown
-    icon: File
-    image: File
+    icon: ImageFile
+    image: ImageFile
     attachment: list[PropertyValue]
     following: str
     followers: str
@@ -189,7 +194,7 @@ class Note(BaseModel):
     to: list[str] = [W3C_ACTIVITYSTREAMS_PUBLIC]
     cc: list[str] = []
     content: Markdown
-    attachment: list[File] = []
+    attachment: list[Attachment] = []
     tag: list[str] = []
 
 
