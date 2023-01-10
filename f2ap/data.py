@@ -120,8 +120,7 @@ class Database:
     def get_message(self, uuid: UUID) -> Optional[model.Message]:
         result = self.execute(
             """
-            SELECT m.uuid as msg_uuid, m.msg_type,
-                n.uuid as note_uuid, n.published_time, n.url, n.reply_to, n.content
+            SELECT m.uuid as msg_uuid, m.msg_type, n.url
             FROM messages m
             JOIN notes n ON n.uuid = m.note
             WHERE msg_uuid = :uuid
@@ -132,22 +131,15 @@ class Database:
         if result is None:
             return None
 
-        msg_uuid, msg_type, note_uuid, published, url, reply_to, content = result
-        published_at = datetime.fromtimestamp(published)
+        msg_uuid, msg_type, url = result
+        note = self.get_note(url)
 
         return model.Message(
             id=f"https://{self.config.url}/messages/{msg_uuid}",
             type=msg_type,
             actor=self.config.actor.id,
-            published=published_at,
-            object=model.Note(
-                id=f"https://{self.config.url}/notes/{note_uuid}",
-                published=published_at,
-                url=url,
-                attributedTo=self.config.actor.id,
-                inReplyTo=reply_to,
-                content=content,
-            ),
+            published=note.published,
+            object=note
         )
 
     def get_note(self, url: str) -> Optional[model.Note]:
@@ -228,8 +220,7 @@ class Database:
     def get_messages(self, order: str = "DESC") -> [dict]:
         results = self.execute(
             f"""
-            SELECT m.uuid as m_uuid, m.msg_type,
-                   n.uuid as n_uuid, n.content, n.published_time, n.reply_to, n.url
+            SELECT m.uuid as m_uuid, m.msg_type, n.url
             FROM messages m
             JOIN notes n ON m.note = n.uuid
             ORDER BY n.published_time {order}
@@ -241,30 +232,15 @@ class Database:
         for (
             message_uuid,
             message_type,
-            note_uuid,
-            note_content,
-            note_published_time,
-            reply_to,
             url,
         ) in results:
-            published = datetime.fromtimestamp(note_published_time, tz=timezone.utc)
+            note = self.get_note(url)
             messages.append(
                 model.Message(
                     id=f"https://{self.config.url}/messages/{message_uuid}",
                     actor=self.config.actor.id,
-                    published=published,
-                    object=model.Note(
-                        id=f"https://{self.config.url}/notes/{note_uuid}",
-                        inReplyTo=reply_to,
-                        published=published.isoformat(),
-                        url=url,
-                        cc=[self.config.actor.followers_link],
-                        attributedTo=self.config.actor.id,
-                        content=markdown.markdown(
-                            note_content,
-                            extensions=["markdown.extensions.nl2br", "mdx_linkify"],
-                        ),
-                    ),
+                    published=note.published,
+                    object=note,
                 )
             )
 
