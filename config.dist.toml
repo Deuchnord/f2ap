@@ -60,3 +60,7 @@ format = "[{title}]({url})\n{summary}\n{tags}"
 # Available formats: camelCase, CamelCase, snake_case
 # Default: camelCase
 tag_format = "camelCase"
+
+# A list of groups you want to send the message to, additionally to the followers.
+# This is required to get the messages discoverable by some social applications like Lemmy.
+groups = []
