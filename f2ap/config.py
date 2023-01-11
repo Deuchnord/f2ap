@@ -1,5 +1,8 @@
+import logging
+
 import toml
 import humps
+import requests
 
 from typing import Callable, Union
 
@@ -40,9 +43,54 @@ class Actor:
         self.display_name = display_name
         self.summary = summary
         self.avatar = avatar
+        self.avatar_type = None
         self.header = header
+        self.header_type = None
         self.following = followings if followings is not None else []
         self.attachments = attachments
+
+        avatar_header_preferred_mimes = [
+            "image/png",
+            "image/jpeg",
+            "image/gif",
+            "image/webp",
+        ]
+
+        for what, url in [("avatar", avatar), ("header", header)]:
+            try:
+                r = requests.head(url)
+                r.raise_for_status()
+                content_type = r.headers.get("Content-Type")
+
+                if content_type is None:
+                    logging.warning(
+                        f"Could not determine the type of the {what} at {url}:"
+                        f" server does not provide a Content-Type."
+                        f" It may not appear on social applications."
+                    )
+                elif not content_type.startswith("image/"):
+                    logging.warning(
+                        f"The {what} at {url} is reported with MIME type {content_type},"
+                        f" which does not match an image. It may not appear on social applications."
+                    )
+                elif content_type not in avatar_header_preferred_mimes:
+                    logging.warning(
+                        f"The {what} at {url} is reported with MIME type {content_type},"
+                        f" which is unusual image type for the Web"
+                        f" (usual images types are {', '.join(avatar_header_preferred_mimes)})."
+                        f" It may not appear on social applications."
+                    )
+
+                if what == "avatar":
+                    self.avatar_type = content_type
+                else:
+                    self.header_type = content_type
+
+            except requests.HTTPError as e:
+                logging.warning(
+                    f"Could not load the {what} metadata at {url}: {e}."
+                    f" It may not appear correctly on social applications."
+                )
 
         with open(public_key, "r") as file:
             self.public_key = file.read()
