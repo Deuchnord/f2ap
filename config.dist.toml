@@ -17,8 +17,8 @@ update_freq = 5
 [actor]
 username = "blog"
 display_name = "The most perfect blog of the Web"
-avatar = "/path/to/avatar.png"
-header = "/path/to/header.jpg"
+avatar = "https://example.com/images/avatar.png"
+header = "https://example.com/images/header.jpg"
 summary = "Why make threads when you can have a blog? 👀"
 
 # A list of people you want the actor to follow, in `@username@example.com` format.

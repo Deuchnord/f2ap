@@ -1,4 +1,3 @@
-import mimetypes
 from typing import Optional
 
 from pydantic import BaseModel
@@ -112,20 +111,12 @@ class Link(Attachment):
 
 
 class File(Attachment):
-    mediaType: str
+    mediaType: Optional[str]
     url: str
 
-
-class ImageFile(File):
     @classmethod
-    def from_file(cls, path: str, url: str):
-        file_type, _ = mimetypes.guess_type(path, strict=True)
-        if file_type.split("/")[0] != "image":
-            raise TypeError(
-                f'Invalid file type for file "{path}". Check it is a valid image.'
-            )
-
-        return cls(type="Image", mediaType=file_type, url=url)
+    def make(cls, url: str, mime_type: str):
+        return cls(type="Image", mediaType=mime_type, url=url)
 
 
 class PublicKey(BaseModel):
@@ -142,8 +133,8 @@ class Actor(BaseModel):
     preferredUsername: str
     name: str
     summary: Markdown
-    icon: ImageFile
-    image: ImageFile
+    icon: File
+    image: File
     attachment: list[PropertyValue]
     following: str
     followers: str
@@ -167,8 +158,8 @@ class Actor(BaseModel):
             preferredUsername=actor.preferred_username,
             name=actor.display_name,
             summary=Markdown(actor.summary),
-            icon=ImageFile.from_file(actor.avatar, f"{actor.id}/avatar"),
-            image=ImageFile.from_file(actor.header, f"{actor.id}/header"),
+            icon=File.make(actor.avatar, f"{actor.id}/avatar"),
+            image=File.make(actor.header, f"{actor.id}/header"),
             attachment=cls.make_attachments(actor.attachments),
             following=f"{actor.id}/following",
             followers=f"{actor.id}/followers",

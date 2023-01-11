@@ -161,34 +161,6 @@ def start_server(
 
         return respond(Actor.make(config.actor))
 
-    @app.head("/actors/{username}/avatar")
-    @app.get("/actors/{username}/avatar")
-    async def get_actor_avatar(username: str):
-        if username != config.actor.preferred_username or config.actor.avatar is None:
-            return Response(status_code=404)
-
-        file_type, _ = mimetypes.guess_type(config.actor.avatar)
-
-        if file_type not in ["image/jpeg", "image/png"]:
-            return Response(status_code=404)
-
-        with open(config.actor.avatar, "rb") as file:
-            return Response(file.read(), headers={"Content-Type": file_type})
-
-    @app.head("/actors/{username}/header")
-    @app.get("/actors/{username}/header")
-    async def get_actor_header(username: str):
-        if username != config.actor.preferred_username or config.actor.header is None:
-            return Response(status_code=404)
-
-        file_type, _ = mimetypes.guess_type(config.actor.header)
-
-        if file_type not in ["image/jpeg", "image/png"]:
-            return Response(status_code=404)
-
-        with open(config.actor.header, "rb") as file:
-            return Response(file.read(), headers={"Content-Type": file_type})
-
     @app.activitypub(
         "/actors/{username}/following",
         ignore_unset=True,
