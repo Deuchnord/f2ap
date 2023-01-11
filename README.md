@@ -95,12 +95,6 @@ server {
         }
     }
     
-    # Exposes the avatar and the header of the profile
-    # Change the <username> here with the username of the actor you expose (for instance: blog)
-    location ~ /actors/<username>/(avatar|header) {
-        proxy_pass http://127.0.0.1:8000;
-    }
-    
     ## ... 
 }
 ```
