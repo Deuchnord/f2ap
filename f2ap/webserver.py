@@ -17,10 +17,9 @@ from pydantic import BaseModel
 from . import postie, signature, activitypub
 from .config import Configuration
 from .data import Database
+from .exceptions import HttpError
 from .model import OrderedCollection, Actor
 from .json import ActivityJsonEncoder
-
-ACTIVITY_JSON_MIME_TYPE = "application/activity+json"
 
 W3C_ACTIVITY_STREAM = "https://www.w3.org/ns/activitystreams"
 
@@ -224,62 +223,19 @@ def start_server(
         inbox = await request.json()
 
         try:
-            actor = requests.get(
-                inbox.get("actor"), headers={"Accept": ACTIVITY_JSON_MIME_TYPE}
+            actor, activity_response = activitypub.handle_inbox(
+                config,
+                db,
+                dict(request.headers),
+                inbox,
+                lambda i, a: start_server.following.append((i, a)),
             )
-            actor.raise_for_status()
-            actor = actor.json()
-            actor_inbox = actor.get("inbox")
-        except requests.exceptions.HTTPError:
-            if inbox.get("type") == "Delete" and inbox.get("actor") == inbox.get(
-                "object"
-            ):
-                db.delete_follower(inbox.get("object"))
-
-            return
-
-        try:
-            public_key_pem = actor.get("publicKey", {}).get("publicKeyPem")
-            if public_key_pem is None:
-                raise ValueError("Missing public key on actor.")
-            signature.validate_headers(
-                public_key_pem, dict(request.headers), f"/actors/{username}/inbox"
-            )
-        except ValueError as e:
-            logging.debug(
-                f"Could not validate signature: {e.args[0]}. Request rejected."
-            )
-            logging.debug(f"Headers: {request.headers}")
-            logging.debug(f"Public key: {public_key_pem}")
-            logging.debug(inbox)
-            return Response(str(e), status_code=401)
-
-        activity_response = None
-
-        if inbox.get("type") == "Follow":
-            db.insert_follower(inbox.get("actor"))
-            activity_response = {"type": "Accept", "object": inbox}
-        elif (
-            inbox.get("type") == "Accept"
-            and inbox.get("object", {}).get("type") == "Follow"
-        ):
-            start_server.following.append(
-                (inbox.get("object").get("id"), inbox.get("actor"))
-            )
-            logging.debug(f"Following {inbox.get('actor')} successful.")
-        elif (
-            inbox.get("type") == "Undo"
-            and inbox.get("object", {}).get("type") == "Follow"
-        ):
-            db.delete_follower(inbox.get("actor"))
+        except HttpError as e:
+            return Response(e.body, status_code=e.status_code)
 
         if activity_response is not None:
             activity_response["@context"] = W3C_ACTIVITY_STREAM
-            background_tasks.add_task(
-                postie.deliver, config, actor_inbox, activity_response
-            )
-
-        return
+            background_tasks.add_task(postie.deliver, config, actor, activity_response)
 
     @app.activitypub("/messages/{uuid}")
     async def get_messages(uuid: UUID):

@@ -2,12 +2,14 @@ import re
 import requests
 import logging
 
-from typing import Union
+from typing import Union, Optional, Callable
 from uuid import uuid4
 
-from . import postie, model
+from . import postie, model, signature
 from .config import Configuration
-from .markdown import parse_markdown, find_hashtags
+from .data import Database
+from .exceptions import UnauthorizedHttpError
+from .markdown import parse_markdown
 
 W3_PUBLIC_STREAM = "https://www.w3.org/ns/activitystreams#Public"
 
@@ -139,3 +141,80 @@ def propagate_messages(
         message.object.content = parse_markdown(message.object.content)
         for inbox in inboxes:
             postie.deliver(config, inbox, message.dict())
+
+
+def handle_inbox(
+    config: Configuration,
+    db: Database,
+    headers: dict,
+    inbox: dict,
+    on_following_accepted: Callable,
+) -> Union[None, tuple[dict, dict]]:
+    actor = get_actor_from_inbox(db, inbox)
+    if actor is None:
+        return
+
+    check_message_signature(config, actor, headers, inbox)
+
+    return actor, handle_inbox_message(db, inbox, on_following_accepted)
+
+
+def get_actor_from_inbox(db: Database, inbox: dict) -> dict:
+    try:
+        actor = requests.get(inbox.get("actor"), headers={"Accept": MIME_JSON_ACTIVITY})
+
+        actor.raise_for_status()
+
+        actor = actor.json()
+        return actor
+
+    except requests.exceptions.HTTPError:
+        # If the message says the actor has been deleted, delete it from the followers (if they were following)
+        if inbox.get("type") == "Delete" and inbox.get("actor") == inbox.get("object"):
+            db.delete_follower(inbox.get("object"))
+
+        return None
+
+
+def check_message_signature(
+    config: Configuration, actor: dict, headers: dict, inbox: dict
+):
+    public_key_pem = actor.get("publicKey", {}).get("publicKeyPem")
+
+    try:
+        if public_key_pem is None:
+            raise ValueError("Missing public key on actor.")
+
+        signature.validate_headers(
+            public_key_pem, headers, f"/actors/{config.actor.preferred_username}/inbox"
+        )
+
+        return
+
+    except ValueError as e:
+        logging.debug(f"Could not validate signature: {e.args[0]}. Request rejected.")
+        logging.debug(f"Headers: {headers}")
+        logging.debug(f"Public key: {public_key_pem}")
+        logging.debug(inbox)
+
+        raise UnauthorizedHttpError(str(e))
+
+
+def handle_inbox_message(
+    db: Database, inbox: dict, on_following_accepted: Callable
+) -> Optional[dict]:
+    if (
+        inbox.get("type") == "Accept"
+        and inbox.get("object", {}).get("type") == "Follow"
+    ):
+        on_following_accepted(inbox.get("object").get("id"), inbox.get("actor"))
+        logging.debug(f"Following {inbox.get('actor')} successful.")
+        return
+
+    if inbox.get("type") == "Follow":
+        db.insert_follower(inbox.get("actor"))
+        return {"type": "Accept", "object": inbox}
+
+    if inbox.get("type") == "Undo" and inbox.get("object", {}).get("type") == "Follow":
+        db.delete_follower(inbox.get("actor"))
+        return
