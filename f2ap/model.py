@@ -90,8 +90,28 @@ def activitystream(*additional_contexts: str):
     return decorator
 
 
-class File(BaseModel):
+class Attachment(BaseModel):
     type: str
+
+
+class PropertyValue(Attachment):
+    name: str
+    value: str
+
+    @classmethod
+    def make(cls, name: str, value: str):
+        return cls(type="PropertyValue", name=name, value=value)
+
+
+class Link(Attachment):
+    href: str
+
+    @classmethod
+    def make(cls, href: str):
+        return cls(type="Link", href=href)
+
+
+class File(Attachment):
     mediaType: str
     url: str
 
@@ -108,22 +128,6 @@ class ImageFile(File):
         return cls(type="Image", mediaType=file_type, url=url)
 
 
-class PropertyValue(BaseModel):
-    type: str = "PropertyValue"
-    name: str
-    value: Markdown
-
-
-class Attachment(BaseModel):
-    type: str
-    name: str
-    value: str
-
-    @classmethod
-    def property_value(cls, name: str, value: str):
-        return cls(type="PropertyValue", name=name, value=value)
-
-
 class PublicKey(BaseModel):
     id: str
     owner: str
@@ -138,8 +142,8 @@ class Actor(BaseModel):
     preferredUsername: str
     name: str
     summary: Markdown
-    icon: File
-    image: File
+    icon: ImageFile
+    image: ImageFile
     attachment: list[PropertyValue]
     following: str
     followers: str
@@ -151,7 +155,7 @@ class Actor(BaseModel):
     def make_attachments(cls, attachments: {str: str}) -> list[Attachment]:
         l = []
         for key, value in attachments.items():
-            l.append(Attachment.property_value(key, Markdown(value)))
+            l.append(PropertyValue.make(key, Markdown(value)))
 
         return l
 
@@ -181,7 +185,9 @@ class Actor(BaseModel):
 @activitystream()
 class Note(BaseModel):
     id: str
+    name: Optional[str]
     type: str = "Note"
+    mediaType: str = "text/html"
     inReplyTo: Optional[str]
     published: datetime
     url: str
@@ -189,7 +195,7 @@ class Note(BaseModel):
     to: list[str] = [W3C_ACTIVITYSTREAMS_PUBLIC]
     cc: list[str] = []
     content: Markdown
-    attachment: list[File] = []
+    attachment: list[Attachment] = []
     tag: list[str] = []
 
 
