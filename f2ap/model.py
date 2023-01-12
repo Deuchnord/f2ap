@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel
 from datetime import datetime
@@ -45,7 +46,13 @@ class Markdown(str):
         )
 
 
-def activitystream(*additional_contexts: str):
+def activitystream(contexts: list[str] = None, hide_properties: list[str] = None):
+    if contexts is None:
+        contexts = []
+
+    if hide_properties is None:
+        hide_properties = []
+
     def decorator(cls: type):
         if not issubclass(cls, BaseModel):
             raise TypeError(
@@ -66,10 +73,8 @@ def activitystream(*additional_contexts: str):
             exclude_defaults=False,
             exclude_none=False,
         ):
-            d = {
-                "@context": ["https://www.w3.org/ns/activitystreams"]
-                + list(additional_contexts)
-            }
+            d = {"@context": ["https://www.w3.org/ns/activitystreams"] + contexts}
+
             for key, value in self.old_dict(
                 include=include,
                 exclude=exclude,
@@ -79,6 +84,9 @@ def activitystream(*additional_contexts: str):
                 exclude_defaults=exclude_defaults,
                 exclude_none=exclude_none,
             ).items():
+                if key in hide_properties:
+                    continue
+
                 d[key] = value
 
             return d
@@ -125,7 +133,7 @@ class PublicKey(BaseModel):
     publicKeyPem: str
 
 
-@activitystream("https://w3id.org/security/v1")
+@activitystream(contexts=["https://w3id.org/security/v1"])
 class Actor(BaseModel):
     id: str
     url: str
@@ -173,8 +181,9 @@ class Actor(BaseModel):
         )
 
 
-@activitystream()
+@activitystream(hide_properties=["uuid"])
 class Note(BaseModel):
+    uuid: UUID
     id: str
     name: Optional[str]
     type: str = "Note"

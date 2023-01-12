@@ -5,6 +5,7 @@ import humps
 import requests
 
 from typing import Callable, Union
+from .enum import Visibility
 
 
 class Website:
@@ -149,6 +150,20 @@ class Message:
 
     def get_tags_formatter(self) -> Union[Callable, None]:
         return self.get_tags_formatters().get(self.tag_format)
+
+
+class Comments:
+    def __init__(
+        self,
+        enable: bool = False,
+        js_widget: bool = False,
+        minimal_visibility: Visibility = Visibility.PUBLIC,
+        accept_sensitive: bool = False,
+    ):
+        self.enable = enable
+        self.js_widget = js_widget
+        self.minimal_visibility = minimal_visibility
+        self.accept_sensitive = accept_sensitive
 
 
 def get_config(file_path: str) -> Configuration:

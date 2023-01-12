@@ -1,5 +1,7 @@
 # ![f2ap](logo.svg)
 
+[![Coverage Status](https://coveralls.io/repos/github/Deuchnord/f2ap/badge.svg?branch=main)](https://coveralls.io/github/Deuchnord/f2ap?branch=main)
+
 f2ap (_Feed to ActivityPub_) is a web application that uses the RSS/Atom feed of your website to expose it on the Fediverse
 through ActivityPub.
 

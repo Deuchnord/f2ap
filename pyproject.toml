@@ -32,10 +32,14 @@ markdown = "^3.4.1"
 mdx-linkify = "^2.1"
 pydantic = "^1.10.2"
 beautifulsoup4 = "^4.11.1"
+python-dateutil = "^2.8.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"
 pycln = "^2.1.2"
+pytest = "^7.2.0"
+pytest-cov = "^4.0.0"
+coveralls = "^3.3.1"
 
 [build-system]
 requires = ["poetry-core"]

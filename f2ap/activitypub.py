@@ -2,16 +2,16 @@ import re
 import requests
 import logging
 
+from dateutil import parser as dateparser
 from typing import Union, Optional, Callable
 from uuid import uuid4
 
-from . import postie, model, signature
+from . import postie, model, signature, html
 from .config import Configuration
 from .data import Database
+from .enum import Visibility
 from .exceptions import UnauthorizedHttpError
 from .markdown import parse_markdown
-
-W3_PUBLIC_STREAM = "https://www.w3.org/ns/activitystreams#Public"
 
 MIME_JSON_ACTIVITY = "application/activity+json"
 
@@ -39,7 +39,7 @@ def search_actor(domain: str, username: str) -> Union[None, dict]:
         return None
 
 
-def get_actor(href: str):
+def get_actor(href: str) -> dict:
     try:
         actor = requests.get(href, headers={"Accept": "application/activity+json"})
         actor.raise_for_status()
@@ -218,3 +218,44 @@ def handle_inbox_message(
     if inbox.get("type") == "Undo" and inbox.get("object", {}).get("type") == "Follow":
         db.delete_follower(inbox.get("actor"))
         return
+
+    if inbox.get("type") == "Create" and inbox.get("object", {}).get("type") == "Note":
+        # Save comments to a note
+        note = inbox.get("object")
+        in_reply_to = note.get("inReplyTo")
+        if in_reply_to is None:
+            return
+
+        replying_to = db.get_note(in_reply_to)
+        if replying_to is None:
+            return
+
+        content = html.sanitize(note["content"])
+        published_at = dateparser.isoparse(note["published"])
+        db.insert_comment(
+            replying_to,
+            note["url"],
+            published_at,
+            note["attributedTo"],
+            content,
+            get_note_visibility(note),
+            note["tag"],
+        )
+
+        return
+
+    logging.debug(f"Unsupported message received in the inbox: {inbox}")
+
+
+def get_note_visibility(note: dict) -> Visibility:
+    author = get_actor(note.get("attributedTo"))
+    if author is None:
+        return Visibility.MENTIONED_ONLY
+
+    if model.W3C_ACTIVITYSTREAMS_PUBLIC not in [*note.get("to"), *note.get("cc")]:
+        if author.get("followers") in [*note.get("to", []), *note.get("cc", [])]:
+            return Visibility.FOLLOWERS_ONLY
+
+        return Visibility.MENTIONED_ONLY
+
+    return Visibility.PUBLIC
