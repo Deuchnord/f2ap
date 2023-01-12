@@ -35,6 +35,7 @@ beautifulsoup4 = "^4.11.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"
+pycln = "^2.1.2"
 
 [build-system]
 requires = ["poetry-core"]
