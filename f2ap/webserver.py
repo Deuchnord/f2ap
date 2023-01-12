@@ -3,7 +3,6 @@ import threading
 
 import uvicorn
 import requests
-import mimetypes
 import json
 import base64
 import hashlib
