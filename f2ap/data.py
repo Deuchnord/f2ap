@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 from uuid import uuid4, UUID
 from typing import Union, Optional
 from os.path import exists
-from hashlib import sha256
 
 from . import model
 from .config import Configuration
