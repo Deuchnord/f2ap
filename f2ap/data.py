@@ -165,6 +165,7 @@ class Database:
                 "uuid": "VARCHAR(36) PRIMARY KEY",
                 "published_time": "INTEGER NOT NULL",
                 "url": "VARCHAR(255) NOT NULL",
+                "name": "VARCHAR(500)",
                 "reply_to": "VARCHAR(255)",
                 "content": "TEXT NOT NULL",
                 "tags": "TEXT",
@@ -248,6 +249,7 @@ class Database:
         content: str,
         published_on: datetime,
         url: str,
+        name: str,
         reply_to: str = None,
         tags: [str] = None,
     ) -> (model.Note, UUID):
@@ -257,8 +259,8 @@ class Database:
         uuid = uuid4()
         self.execute(
             """
-            INSERT INTO notes(uuid, content, published_time, reply_to, url, tags)
-            VALUES(:uuid, :content, :published_time, :reply_to, :url, :tags)
+            INSERT INTO notes(uuid, content, published_time, reply_to, url, name, tags)
+            VALUES(:uuid, :content, :published_time, :reply_to, :url, :name, :tags)
         """,
             {
                 "uuid": str(uuid),
@@ -268,6 +270,7 @@ class Database:
                 ),
                 "reply_to": reply_to,
                 "url": url,
+                "name": name,
                 "tags": json.dumps(tags),
             },
         )

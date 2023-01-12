@@ -99,7 +99,7 @@ class UpdateFeedThread(Thread):
             )
 
             note, note_uuid = self.db.insert_note(
-                message, published, item.link, tags=tags
+                message, published, item.link, item.title, tags=tags
             )
             logging.debug("Note saved: %s" % note_uuid)
             message = self.db.insert_message(note_uuid)
