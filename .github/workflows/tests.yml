@@ -1,0 +1,66 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+    pytest:
+        name: Unit tests
+        runs-on: ${{ matrix.os }}
+
+        strategy:
+            fail-fast: false
+            matrix:
+                os:
+                    - ubuntu-latest
+                    - macos-latest
+                python_version:
+                    - '3.9'
+                    - '3.10'
+                    - '3.11'
+
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/setup-python@v4
+              with:
+                python-version: '3.x'
+            - run: |
+                  pip install poetry
+                  poetry install
+            - run: |
+                  poetry run pytest --cov=f2ap tests/*.py
+
+            - name: Push code coverage
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                COVERALLS_PARALLEL: true
+                COVERALLS_FLAG_NAME: "Py${{ matrix.python_version }}_${{ matrix.os }}"
+              run: |
+                python3 -m poetry run coveralls --service=github
+
+    coverage:
+        name: Push coverage report
+        needs: pytest
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Prepare Python
+              uses: actions/setup-python@v4
+              with:
+                python-version: "3.x"
+
+            - name: Install dependencies
+              run: |
+                pip install poetry
+                poetry install
+
+            - name: Upload coverage report
+              run: |
+                poetry run coveralls --finish --service=github
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

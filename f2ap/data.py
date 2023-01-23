@@ -10,6 +10,43 @@ from os.path import exists
 
 from . import model
 from .config import Configuration
+from .enum import Visibility
+
+TABLES = {
+    "metadata": {
+        "key": "VARCHAR(50) PRIMARY KEY",
+        "value": "TEXT",
+    },
+    "messages": {
+        "uuid": "VARCHAR(36) PRIMARY KEY",
+        "msg_type": "VARCHAR(20) NOT NULL",
+        "note": "VARCHAR(36) NOT NULL",
+    },
+    "notes": {
+        "uuid": "VARCHAR(36) PRIMARY KEY",
+        "published_time": "INTEGER NOT NULL",
+        "url": "VARCHAR(255) NOT NULL",
+        "name": "VARCHAR(500)",
+        "reply_to": "VARCHAR(255)",
+        "content": "TEXT NOT NULL",
+        "tags": "TEXT",
+    },
+    "followers": {
+        "uuid": "VARCHAR(36) PRIMARY KEY",
+        "follower_since": "INTEGER NOT NULL",
+        "link": "VARCHAR(255) NOT NULL",
+    },
+    "comments": {
+        "uuid": "VARCHAR(36) PRIMARY KEY",
+        "url": "VARCHAR(255) NOT NULL",
+        "attributed_to": "VARCHAR(255)",  # pass null to anonymize (useful if user deletes their account)
+        "replying_to": "VARCHAR(36) NOT NULL",
+        "published_time": "INTEGER NOT NULL",
+        "content": "TEXT NOT NULL",
+        "visibility": "INTEGER NOT NULL",
+        "tags": "TEXT",
+    },
+}
 
 W3C_PUBLIC_STREAM = "https://www.w3.org/ns/activitystreams#Public"
 
@@ -84,6 +121,7 @@ class Database:
 
         if current_db_version == 1:
             logging.debug("Upgrading from v1 to v2...")
+            self.init_database(update=True, only_tables=["comments"])
             self.execute(
                 """
                 ALTER TABLE notes
@@ -145,49 +183,33 @@ class Database:
 
         return True
 
-    def init_database(self):
-        if exists(self.file_path):
+    def init_database(self, update: bool = False, only_tables: [str] = None):
+        only_tables = [] if only_tables is None else only_tables
+
+        if not update and exists(self.file_path):
             raise IOError(
-                f"Database already exists. If you really want to reinitialize the data, delete it or rename it first."
+                "Database already exists. If you really want to reinitialize the data, delete it or rename it first."
             )
 
-        tables = {
-            "metadata": {
-                "key": "VARCHAR(50) PRIMARY KEY",
-                "value": "TEXT",
-            },
-            "messages": {
-                "uuid": "VARCHAR(36) PRIMARY KEY",
-                "msg_type": "VARCHAR(20) NOT NULL",
-                "note": "VARCHAR(36) NOT NULL",
-            },
-            "notes": {
-                "uuid": "VARCHAR(36) PRIMARY KEY",
-                "published_time": "INTEGER NOT NULL",
-                "url": "VARCHAR(255) NOT NULL",
-                "name": "VARCHAR(500)",
-                "reply_to": "VARCHAR(255)",
-                "content": "TEXT NOT NULL",
-                "tags": "TEXT",
-            },
-            "followers": {
-                "uuid": "VARCHAR(36) PRIMARY KEY",
-                "follower_since": "INTEGER NOT NULL",
-                "link": "VARCHAR(255) NOT NULL",
-            },
-        }
+        if update and len(only_tables) == 0:
+            raise ValueError("Update mode requires a list of tables.")
 
         with sqlite3.connect(self.file_path) as connection:
             cursor = connection.cursor()
-            for table in tables:
+            for table in TABLES:
+                if update and table not in only_tables:
+                    continue
+
                 sql = f"CREATE TABLE {table}("
                 sep = ""
 
-                for field in tables[table]:
-                    sql += f"{sep}{field} {tables[table][field]}"
+                for field in TABLES[table]:
+                    sql += f"{sep}{field} {TABLES[table][field]}"
                     sep = ", "
 
                 sql += ")"
+
+                logging.debug(sql)
                 cursor.execute(sql)
 
         self.set_metadata("version", DATABASE_VERSION)
@@ -233,6 +255,7 @@ class Database:
         uuid, published, name, url, reply_to, content, tags = query
 
         return model.Note(
+            uuid=uuid,
             id=url,
             name=name,
             in_reply_to=reply_to,
@@ -323,6 +346,41 @@ class Database:
             )
 
         return messages
+
+    def insert_comment(
+        self,
+        replying_to: model.Note,
+        url: str,
+        published_on: datetime,
+        author_url: str,
+        content: str,
+        visibility: Visibility,
+        tags: [model.Tag] = None,
+    ) -> UUID:
+        if tags is None:
+            tags = []
+
+        uuid = uuid4()
+
+        self.execute(
+            """
+            INSERT INTO comments(uuid, url, published_time, attributed_to, replying_to, content, visibility, tags)
+            VALUES(:uuid, :url, :published_time, :attributed_to, :replying_to, :content, :visibility, :tags)
+        """,
+            {
+                "uuid": str(uuid),
+                "url": url,
+                "published_time": published_on.astimezone(timezone.utc).timestamp(),
+                "attributed_to": author_url,
+                "replying_to": replying_to.id,
+                "content": content,
+                "visibility": visibility.value,
+                "tags": json.dumps(tags),
+            },
+        )
+
+    def get_comments(self, note: model.Note, urls_only: bool = False):
+        pass
 
     def get_last_note_datetime(self) -> Union[None, datetime]:
         (result,) = self.execute(

@@ -223,7 +223,7 @@ def start_server(
         inbox = await request.json()
 
         try:
-            actor, activity_response = activitypub.handle_inbox(
+            response = activitypub.handle_inbox(
                 config,
                 db,
                 dict(request.headers),
@@ -232,6 +232,11 @@ def start_server(
             )
         except HttpError as e:
             return Response(e.body, status_code=e.status_code)
+
+        if response is None:
+            return
+
+        actor, activity_response = response
 
         if activity_response is not None:
             activity_response["@context"] = W3C_ACTIVITY_STREAM
