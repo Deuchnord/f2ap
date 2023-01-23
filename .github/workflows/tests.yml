@@ -41,6 +41,14 @@ jobs:
               run: |
                 python3 -m poetry run coveralls --service=github
 
+            # Upload generated artifacts only if tests don't pass, to help debugging.
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v3
+              if: failure()
+              with:
+                  name: test-files
+                  path: tests/files/
+
     coverage:
         name: Push coverage report
         needs: pytest

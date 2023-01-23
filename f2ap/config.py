@@ -58,6 +58,9 @@ class Actor:
         ]
 
         for what, url in [("avatar", avatar), ("header", header)]:
+            if url is None:
+                continue
+
             try:
                 r = requests.head(url)
                 r.raise_for_status()

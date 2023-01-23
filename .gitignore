@@ -1,4 +1,7 @@
 *.toml
 !*.dist.toml
 *.db
+*.bak
+
+!/tests/files/database/upgrade/database-v1.db
 .coverage

@@ -12,39 +12,41 @@ from . import model
 from .config import Configuration
 from .enum import Visibility
 
+# Note: primary keys are defined as nullable because of a mistake made in the first version (I didn't even know this was possible).
+# We need to alter tables later to fix that.
 TABLES = {
     "metadata": {
-        "key": "VARCHAR(50) PRIMARY KEY",
-        "value": "TEXT",
+        "key": {"type": "VARCHAR(50)", "primary": True, "nullable": True},
+        "value": {"type": "TEXT", "primary": False, "nullable": True},
     },
     "messages": {
-        "uuid": "VARCHAR(36) PRIMARY KEY",
-        "msg_type": "VARCHAR(20) NOT NULL",
-        "note": "VARCHAR(36) NOT NULL",
+        "uuid": {"type": "VARCHAR(36)", "primary": True, "nullable": True},
+        "msg_type": {"type": "VARCHAR(20)", "primary": False, "nullable": False},
+        "note": {"type": "VARCHAR(36)", "primary": False, "nullable": False},
     },
     "notes": {
-        "uuid": "VARCHAR(36) PRIMARY KEY",
-        "published_time": "INTEGER NOT NULL",
-        "url": "VARCHAR(255) NOT NULL",
-        "name": "VARCHAR(500)",
-        "reply_to": "VARCHAR(255)",
-        "content": "TEXT NOT NULL",
-        "tags": "TEXT",
+        "uuid": {"type": "VARCHAR(36)", "primary": True, "nullable": True},
+        "published_time": {"type": "INTEGER", "primary": False, "nullable": False},
+        "url": {"type": "VARCHAR(255)", "primary": False, "nullable": False},
+        "name": {"type": "VARCHAR(500)", "primary": False, "nullable": True},
+        "reply_to": {"type": "VARCHAR(255)", "primary": False, "nullable": True},
+        "content": {"type": "TEXT", "primary": False, "nullable": False},
+        "tags": {"type": "TEXT", "primary": False, "nullable": True},
     },
     "followers": {
-        "uuid": "VARCHAR(36) PRIMARY KEY",
-        "follower_since": "INTEGER NOT NULL",
-        "link": "VARCHAR(255) NOT NULL",
+        "uuid": {"type": "VARCHAR(36)", "primary": True, "nullable": True},
+        "follower_since": {"type": "INTEGER", "primary": False, "nullable": False},
+        "link": {"type": "VARCHAR(255)", "primary": False, "nullable": False},
     },
     "comments": {
-        "uuid": "VARCHAR(36) PRIMARY KEY",
-        "url": "VARCHAR(255) NOT NULL",
-        "attributed_to": "VARCHAR(255)",  # pass null to anonymize (useful if user deletes their account)
-        "replying_to": "VARCHAR(36) NOT NULL",
-        "published_time": "INTEGER NOT NULL",
-        "content": "TEXT NOT NULL",
-        "visibility": "INTEGER NOT NULL",
-        "tags": "TEXT",
+        "uuid": {"type": "VARCHAR(36)", "primary": True, "nullable": True},
+        "url": {"type": "VARCHAR(255)", "primary": False, "nullable": False},
+        "attributed_to": {"type": "VARCHAR(255)", "primary": False, "nullable": True},
+        "replying_to": {"type": "VARCHAR(36)", "primary": False, "nullable": False},
+        "published_time": {"type": "INTEGER", "primary": False, "nullable": False},
+        "content": {"type": "TEXT", "primary": False, "nullable": False},
+        "visibility": {"type": "INTEGER", "primary": False, "nullable": False},
+        "tags": {"type": "TEXT", "primary": False, "nullable": True},
     },
 }
 
@@ -88,6 +90,26 @@ class Database:
             "UPDATE metadata SET value = :value WHERE key = :key",
             {"key": key, "value": value},
         )
+
+    def get_schema_info(self) -> dict:
+        tables = {}
+
+        for _, table_name, _type, _, _, _ in self.execute("PRAGMA main.table_list"):
+            if _type != "table" or table_name == "sqlite_schema":
+                continue
+
+            tables[table_name] = {}
+
+            for _, field_name, field_type, not_null, _, is_primary in self.execute(
+                f"PRAGMA table_info('{table_name}')"
+            ):
+                tables[table_name][field_name] = {
+                    "type": field_type,
+                    "nullable": not not_null,
+                    "primary": bool(is_primary),
+                }
+
+        return tables
 
     def get_database_version(self):
         return int(self.get_metadata("version"))
@@ -204,7 +226,14 @@ class Database:
                 sep = ""
 
                 for field in TABLES[table]:
-                    sql += f"{sep}{field} {TABLES[table][field]}"
+                    field_info = TABLES[table][field]
+                    sql += f"{sep}{field} {field_info.get('type', 'TEXT')}"
+
+                    if field_info.get("primary", False):
+                        sql += " PRIMARY KEY"
+                    if not field_info.get("nullable", True):
+                        sql += " NOT NULL"
+
                     sep = ", "
 
                 sql += ")"
