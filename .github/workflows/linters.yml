@@ -31,4 +31,4 @@ jobs:
                   pip install poetry
                   poetry install
             - run: |
-                  poetry run pycln --check f2ap
+                  poetry run pycln --check f2ap tests
