@@ -4,14 +4,18 @@ from markdown import markdown as _markdown
 from markdown.preprocessors import Preprocessor
 from markdown.extensions import Extension
 
-EXT_NL2BR = "markdown.extensions.nl2br"
+EXT_NL2BR = "nl2br"
 EXT_LINKIFY = "mdx_linkify"
 
 
 def find_hashtags(s: str) -> [str]:
     pattern = re.compile("#([^0-9-][^. -]*)")
+    tags = []
+
     for tag in pattern.findall(s):
-        yield tag
+        tags.append(tag)
+
+    return tags
 
 
 class FediverseTagsParser(Preprocessor):
