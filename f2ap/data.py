@@ -408,8 +408,13 @@ class Database:
             },
         )
 
+        return uuid
+
     def get_comments(self, note: model.Note, urls_only: bool = False):
         pass
+
+    def delete_comment(self, url: str):
+        self.execute("DELETE FROM comments WHERE url = :url", {"url": url})
 
     def get_last_note_datetime(self) -> Union[None, datetime]:
         (result,) = self.execute(

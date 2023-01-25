@@ -234,13 +234,24 @@ def handle_inbox_message(
         published_at = dateparser.isoparse(note["published"])
         db.insert_comment(
             replying_to,
-            note["url"],
+            note["id"],
             published_at,
             note["attributedTo"],
             content,
             get_note_visibility(note),
             note["tag"],
         )
+
+        return
+
+    if inbox.get("type") == "Delete":
+        o = inbox.get("object", {})
+        if not isinstance(o, dict):
+            logging.debug(f"Tried to delete unsupported object: {inbox}")
+            return
+
+        # Tombstone might be a Note, try to delete it.
+        db.delete_comment(o.get("id"))
 
         return
 
