@@ -2,7 +2,6 @@ import logging
 import threading
 
 import uvicorn
-import requests
 import json
 import base64
 import hashlib
@@ -11,10 +10,10 @@ from uuid import UUID
 from typing import Union, Any, Optional
 from fastapi import FastAPI, BackgroundTasks
 from fastapi import Request
-from fastapi.responses import Response, JSONResponse, RedirectResponse
+from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel
 
-from . import postie, signature, activitypub
+from . import postie, activitypub
 from .config import Configuration
 from .data import Database
 from .exceptions import HttpError
@@ -90,16 +89,14 @@ def get_activitypub_decorator(self: FastAPI):
     return decorator
 
 
-def start_server(
-    config: Configuration, port: int, log_level: str, skip_following: bool = False
-):
+def get_server(config: Configuration, skip_following: bool = False):
     app = FastAPI(docs_url=None)
     app.activitypub = get_activitypub_decorator(app)
     db = Database(config)
-    start_server.following = None
+    get_server.following = None
 
     if skip_following:
-        start_server.following = []
+        get_server.following = []
         logging.debug("Following is disabled.")
 
     @app.middleware("http")
@@ -109,8 +106,8 @@ def start_server(
         )
 
         # If the server has just started, follow the users specified in the configuration.
-        if not skip_following and start_server.following is None:
-            start_server.following = []
+        if not skip_following and get_server.following is None:
+            get_server.following = []
             follow_task = FollowThread(config, config.actor.following)
             follow_task.start()
 
@@ -129,8 +126,8 @@ def start_server(
 
     @app.on_event("shutdown")
     async def on_stop():
-        if start_server.following is not None:
-            activitypub.unfollow_users(config, start_server.following)
+        if get_server.following is not None:
+            activitypub.unfollow_users(config, get_server.following)
 
     @app.get("/.well-known/webfinger")
     async def webfinger(resource: Union[str, None]):
@@ -169,7 +166,7 @@ def start_server(
             return Response(status_code=404)
 
         following = []
-        for _, account in start_server.following:
+        for _, account in get_server.following:
             following.append(account)
 
         return respond(
@@ -228,7 +225,7 @@ def start_server(
                 db,
                 dict(request.headers),
                 inbox,
-                lambda i, a: start_server.following.append((i, a)),
+                lambda i, a: get_server.following.append((i, a)),
             )
         except HttpError as e:
             return Response(e.body, status_code=e.status_code)
@@ -246,8 +243,14 @@ def start_server(
     async def get_messages(uuid: UUID):
         return respond(db.get_message(uuid))
 
+    return app
+
+
+def start_server(
+    config: Configuration, port: int, log_level: str, skip_following: bool = False
+):
     uvicorn.run(
-        app,
+        get_server(config, skip_following),
         host="0.0.0.0",
         port=port,
         log_level=log_level.lower(),

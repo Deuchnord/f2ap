@@ -50,45 +50,21 @@ class Actor:
         self.following = followings if followings is not None else []
         self.attachments = attachments
 
-        avatar_header_preferred_mimes = [
-            "image/png",
-            "image/jpeg",
-            "image/gif",
-            "image/webp",
-        ]
+        with open(public_key, "r") as file:
+            self.public_key = file.read()
+        with open(private_key, "r") as file:
+            self.private_key = file.read()
 
         for what, url in [("avatar", avatar), ("header", header)]:
             if url is None:
                 continue
 
             try:
-                r = requests.head(url)
-                r.raise_for_status()
-                content_type = r.headers.get("Content-Type")
-
-                if content_type is None:
-                    logging.warning(
-                        f"Could not determine the type of the {what} at {url}:"
-                        f" server does not provide a Content-Type."
-                        f" It may not appear on social applications."
-                    )
-                elif not content_type.startswith("image/"):
-                    logging.warning(
-                        f"The {what} at {url} is reported with MIME type {content_type},"
-                        f" which does not match an image. It may not appear on social applications."
-                    )
-                elif content_type not in avatar_header_preferred_mimes:
-                    logging.warning(
-                        f"The {what} at {url} is reported with MIME type {content_type},"
-                        f" which is unusual image type for the Web"
-                        f" (usual images types are {', '.join(avatar_header_preferred_mimes)})."
-                        f" It may not appear on social applications."
-                    )
-
+                ct = self.get_attachment_type(what, url)
                 if what == "avatar":
-                    self.avatar_type = content_type
+                    self.avatar_type = ct
                 else:
-                    self.header_type = content_type
+                    self.header_type = ct
 
             except requests.HTTPError as e:
                 logging.warning(
@@ -96,10 +72,39 @@ class Actor:
                     f" It may not appear correctly on social applications."
                 )
 
-        with open(public_key, "r") as file:
-            self.public_key = file.read()
-        with open(private_key, "r") as file:
-            self.private_key = file.read()
+    @staticmethod
+    def get_attachment_type(what: str, url: str) -> str:
+        avatar_header_preferred_mimes = [
+            "image/png",
+            "image/jpeg",
+            "image/gif",
+            "image/webp",
+        ]
+
+        r = requests.head(url)
+        r.raise_for_status()
+        content_type = r.headers.get("Content-Type")
+
+        if content_type is None:
+            logging.warning(
+                f"Could not determine the type of the {what} at {url}:"
+                f" server does not provide a Content-Type."
+                f" It may not appear on social applications."
+            )
+        elif not content_type.startswith("image/"):
+            logging.warning(
+                f"The {what} at {url} is reported with MIME type {content_type},"
+                f" which does not match an image. It may not appear on social applications."
+            )
+        elif content_type not in avatar_header_preferred_mimes:
+            logging.warning(
+                f"The {what} at {url} is reported with MIME type {content_type},"
+                f" which is unusual image type for the Web"
+                f" (usual images types are {', '.join(avatar_header_preferred_mimes)})."
+                f" It may not appear on social applications."
+            )
+
+        return content_type
 
     @property
     def id(self) -> str:
