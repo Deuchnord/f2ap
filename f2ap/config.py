@@ -133,7 +133,7 @@ class Actor:
 
 class Message:
     def __init__(
-        self, format: str, tag_format: str = "camelCase", groups: [str] = None
+        self, format: str, tag_format: str = "camelCase", groups: [str] = None, accept_responses: bool = False
     ):
         valid_tag_formats = self.get_tags_formatters().keys()
 
@@ -147,6 +147,7 @@ class Message:
 
         self.tag_format = tag_format
         self.groups = groups if groups is not None else []
+        self.accept_responses = accept_responses
 
     @staticmethod
     def get_tags_formatters() -> {str: Callable}:

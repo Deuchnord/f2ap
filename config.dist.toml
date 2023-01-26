@@ -64,3 +64,9 @@ tag_format = "camelCase"
 # A list of groups you want to send the message to, additionally to the followers.
 # This is required to get the messages discoverable by some social applications like Lemmy.
 groups = []
+
+# Set this to true to enable the comments feature.
+# When disabled (default behavior):
+# - the comments are silently rejected (social applications still receive an Accepted response to prevent them sending the responses again and again)
+# - the API and JS widget are not available
+accept_responses = false
