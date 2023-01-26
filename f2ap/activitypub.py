@@ -156,7 +156,7 @@ def handle_inbox(
 
     check_message_signature(config, actor, headers, inbox)
 
-    return actor, handle_inbox_message(db, inbox, on_following_accepted)
+    return actor, handle_inbox_message(db, inbox, on_following_accepted, config.message.accept_responses)
 
 
 def get_actor_from_inbox(db: Database, inbox: dict) -> dict:
@@ -201,7 +201,7 @@ def check_message_signature(
 
 
 def handle_inbox_message(
-    db: Database, inbox: dict, on_following_accepted: Callable
+    db: Database, inbox: dict, on_following_accepted: Callable, accept_responses: bool
 ) -> Optional[dict]:
     if (
         inbox.get("type") == "Accept"
@@ -219,7 +219,7 @@ def handle_inbox_message(
         db.delete_follower(inbox.get("actor"))
         return
 
-    if inbox.get("type") == "Create" and inbox.get("object", {}).get("type") == "Note":
+    if accept_responses and inbox.get("type") == "Create" and inbox.get("object", {}).get("type") == "Note":
         # Save comments to a note
         note = inbox.get("object")
         in_reply_to = note.get("inReplyTo")
@@ -251,6 +251,7 @@ def handle_inbox_message(
             return
 
         # Tombstone might be a Note, try to delete it.
+        # Note: this is always done, even when accept_responses is False, just in case it has been disabled lately.
         db.delete_comment(o.get("id"))
 
         return
