@@ -61,49 +61,7 @@ If you run f2ap with Docker, make sure to name it `config.toml` and to place it 
 
 ### Configuring the server
 
-To provide a better integration to your website, you are encouraged to add some configuration lines to your server.
-This will ensure the social applications will correctly discover your website's ActivityPub API.
-
-#### Nginx
-
-Edit your configuration file and add the following lines to your `server` section.
-Don't forget to adapt:
-- the IP address on the `proxy_pass` lines to match f2ap's configuration;
-- the `<username>` part in the last `location` to match the username of your actor.
-
-```nginx
-server {
-    ## ...
-    
-    # Propagate the domain name to f2ap
-    proxy_set_header Host $host;
-    
-    # The webfinger allows the social applications to find out that your website serves an ActivityPub API.
-    location /.well-known/webfinger {
-        proxy_pass http://127.0.0.1:8000;
-    }
-    
-    location / {
-        # Match any request asking for an ActivityPub content
-        if ( $http_accept ~ .*application/activity\+json.* ) {
-            proxy_pass http://127.0.0.1:8000;
-        }
-
-        # Match any request sending an ActivityPub content
-        if ( $http_content_type = "application/activity+json" ) {
-            proxy_pass http://127.0.0.1:8000;
-        }
-    }
-    
-    # Exposes the avatar and the header of the profile
-    # Change the <username> here with the username of the actor you expose (for instance: blog)
-    location ~ /actors/<username>/(avatar|header) {
-        proxy_pass http://127.0.0.1:8000;
-    }
-    
-    ## ... 
-}
-```
+See [the dedicated page](https://github.com/Deuchnord/f2ap/wiki/Web-Server-Configuration) on the wiki.
 
 ### Limitations
 
