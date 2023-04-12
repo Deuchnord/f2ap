@@ -24,9 +24,9 @@ Contact: https://github.com/Deuchnord/f2ap/blob/main/SECURITY.md
 If you have found a vulnerability on a website that uses f2ap, check first if you can reproduce it in the last public version.
 If you can't, the website is most likely using an old version, so you should contact its administrator and tell them they should upgrade.
 
-If you could reproduce on the last version, please don't open an issue directly, and send me an email to [security+f2ap@deuchnord.fr](mailto:security+f2ap@deuchnord.fr?subject=Vulnerability+in+f2ap) with the subject: _"Vulnerability in f2ap"_, and describe the exact nature of the vulnerability.
+If you could reproduce on the last version, please don't open an issue directly, and send me an email to [security+f2ap@deuchnord.fr](mailto:security+f2ap@deuchnord.fr?subject=Vulnerability%20in%20f2ap) with the subject: _"Vulnerability in f2ap"_, and describe the exact nature of the vulnerability.
 If you know how to fix the problem, you may attach your email with a Git patch to apply, so the security patch may be published more quickly.
 
-For more security, you are encouraged to encrypt your email with the PGP public key found [here](https://deuchnord.fr/key.pgp).
+For more security, you are encouraged to encrypt your email with the PGP public key found [here](https://deuchnord.fr/pgp.txt).
 
 Thank you for your time!
