@@ -620,22 +620,22 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pycln"
-version = "2.1.3"
+version = "2.1.4"
 description = "A formatter for finding and removing unused import statements."
 category = "dev"
 optional = false
 python-versions = ">=3.6.2,<4"
 files = [
-    {file = "pycln-2.1.3-py3-none-any.whl", hash = "sha256:161142502e4ff9853cd462a38401e29eb56235919856df2cb7fa4c84e463717f"},
-    {file = "pycln-2.1.3.tar.gz", hash = "sha256:a33bfc64ded74a623b7cf49eca38b58db4348facc60c35af26d45de149b256f5"},
+    {file = "pycln-2.1.4-py3-none-any.whl", hash = "sha256:e541becc3f831e17f89285e7d6a430c6b7f59b434aaa6e46ed08fe8e944f16fc"},
+    {file = "pycln-2.1.4.tar.gz", hash = "sha256:223008181056dcde37b4d6ecece488d17f902a2af7fd9bb2ec9d679477d0ccfc"},
 ]
 
 [package.dependencies]
 libcst = {version = ">=0.3.10,<0.5.0", markers = "python_version >= \"3.7\""}
-pathspec = ">=0.9.0,<0.11.0"
+pathspec = ">=0.9.0,<0.10.0"
 pyyaml = ">=5.3.1,<7.0.0"
 tomlkit = ">=0.11.1,<0.12.0"
-typer = ">=0.4.1,<0.8.0"
+typer = ">=0.4.1,<0.10.0"
 
 [[package]]
 name = "pycryptodome"
