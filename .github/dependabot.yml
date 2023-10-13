@@ -7,8 +7,6 @@ updates:
     target-branch: main
     schedule:
       interval: daily
-    reviewers:
-      - Deuchnord
 
   - package-ecosystem: github-actions
     directory: "/"
@@ -16,5 +14,3 @@ updates:
     target-branch: main
     schedule:
       interval: weekly
-    reviewers:
-      - Deuchnord
