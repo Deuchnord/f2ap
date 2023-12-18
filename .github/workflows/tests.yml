@@ -43,7 +43,7 @@ jobs:
 
             # Upload generated artifacts only if tests don't pass, to help debugging.
             - name: Upload artifacts
-              uses: actions/upload-artifact@v3
+              uses: actions/upload-artifact@v4
               if: failure()
               with:
                   name: test-files
