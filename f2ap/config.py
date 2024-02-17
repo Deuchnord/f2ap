@@ -29,8 +29,8 @@ class Actor:
         private_key: str,
         display_name: str = None,
         summary: str = None,
-        avatar: str|None = None,
-        header: str|None = None,
+        avatar: str | None = None,
+        header: str | None = None,
         followings: [str] = None,
         attachments: {str: str} = None,
     ):

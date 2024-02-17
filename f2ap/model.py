@@ -108,7 +108,7 @@ class Attachment(BaseModel):
 
 class PropertyValueAttachment(Attachment):
     def __init__(self, name: str, value: str):
-        super().__init__(type='PropertyValue', name=name, value=value)
+        super().__init__(type="PropertyValue", name=name, value=value)
 
 
 class PublicKey(BaseModel):
@@ -150,8 +150,16 @@ class Actor(BaseModel):
             preferredUsername=actor.preferred_username,
             name=actor.display_name,
             summary=str(Markdown(actor.summary)),
-            icon=ImageFile.from_file(actor.avatar, f"{actor.id}/avatar") if actor.avatar is not None else None,
-            image=ImageFile.from_file(actor.header, f"{actor.id}/header") if actor.header is not None else None,
+            icon=(
+                ImageFile.from_file(actor.avatar, f"{actor.id}/avatar")
+                if actor.avatar is not None
+                else None
+            ),
+            image=(
+                ImageFile.from_file(actor.header, f"{actor.id}/header")
+                if actor.header is not None
+                else None
+            ),
             attachment=cls.make_attachments(actor.attachments),
             following=f"{actor.id}/following",
             followers=f"{actor.id}/followers",
