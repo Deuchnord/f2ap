@@ -139,7 +139,7 @@ class Database:
             type=msg_type,
             actor=self.config.actor.id,
             published=note.published,
-            object=note
+            object=note,
         )
 
     def get_note(self, url: str) -> Optional[model.Note]:
