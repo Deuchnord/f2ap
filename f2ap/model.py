@@ -243,9 +243,11 @@ class OrderedCollection(BaseModel):
                 totalItems=len(items),
                 first=f"{endpoint}?page={first_page}",
                 last=f"{endpoint}?page={last_page}",
-                prev=f"{endpoint}?page={previous_page}"
-                if previous_page is not None
-                else None,
+                prev=(
+                    f"{endpoint}?page={previous_page}"
+                    if previous_page is not None
+                    else None
+                ),
                 next=f"{endpoint}?page={next_page}" if next_page is not None else None,
                 orderedItems=ordered_items,
             )
