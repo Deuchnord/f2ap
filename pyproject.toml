@@ -33,7 +33,7 @@ mdx-linkify = "^2.1"
 pydantic = ">=1.10.2,<3.0.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.10.0"
+black = "^24.2.0"
 
 [build-system]
 requires = ["poetry-core"]
