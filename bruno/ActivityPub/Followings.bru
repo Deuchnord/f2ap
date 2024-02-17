@@ -1,0 +1,11 @@
+meta {
+  name: Followings
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{url}}/actors/{{actor_username}}/followers
+  body: none
+  auth: none
+}

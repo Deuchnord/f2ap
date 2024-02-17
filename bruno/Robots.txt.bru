@@ -1,0 +1,15 @@
+meta {
+  name: Robots.txt
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{url}}/robots.txt
+  body: none
+  auth: none
+}
+
+assert {
+  res.headers['content-type']: eq text/plain
+}

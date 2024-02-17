@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "f2ap",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

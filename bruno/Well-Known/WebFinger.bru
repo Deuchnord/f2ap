@@ -1,0 +1,28 @@
+meta {
+  name: WebFinger
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{url}}/.well-known/webfinger?resource=acct:{{actor_username}}@{{instance_domain}}
+  body: none
+  auth: none
+}
+
+query {
+  resource: acct:{{actor_username}}@{{instance_domain}}
+}
+
+headers {
+  Accept: application/jrd+json
+}
+
+assert {
+  res.headers['content-type']: eq application/jrd+json
+  res.body.subject: eq acct:{{actor_username}}@{{instance_domain}}
+  res.body.links.length: eq 1
+  res.body.links[0].rel: eq self
+  res.body.links[0].type: eq application/activity+json
+  res.body.links[0].href: eq https://localhost/actors/{{actor_username}}
+}
