@@ -10,7 +10,7 @@ from .config import Actor as ConfigActor, Configuration
 W3C_ACTIVITYSTREAMS_PUBLIC = "https://www.w3.org/ns/activitystreams#Public"
 
 
-class Markdown(str):
+class Markdown:
     def __init__(
         self,
         txt: str,
@@ -19,22 +19,14 @@ class Markdown(str):
         autolink: bool = True,
         parse_fediverse_tags: bool = True,
     ):
+        if not isinstance(txt, str):
+            raise TypeError("must be a string")
+
         self.txt = txt
         self.one_paragraph = one_paragraph
         self.nl2br = nl2br
         self.autolink = autolink
         self.parse_fediverse_tags = parse_fediverse_tags
-
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, value):
-        if not isinstance(value, str):
-            raise TypeError("must be a string")
-
-        return cls(value)
 
     def __str__(self) -> str:
         return parse_markdown(
@@ -108,20 +100,15 @@ class ImageFile(File):
         return cls(type="Image", mediaType=file_type, url=url)
 
 
-class PropertyValue(BaseModel):
-    type: str = "PropertyValue"
-    name: str
-    value: Markdown
-
-
 class Attachment(BaseModel):
     type: str
     name: str
     value: str
 
-    @classmethod
-    def property_value(cls, name: str, value: str):
-        return cls(type="PropertyValue", name=name, value=value)
+
+class PropertyValueAttachment(Attachment):
+    def __init__(self, name: str, value: str):
+        super().__init__(type='PropertyValue', name=name, value=value)
 
 
 class PublicKey(BaseModel):
@@ -137,10 +124,10 @@ class Actor(BaseModel):
     type: str = "Person"
     preferredUsername: str
     name: str
-    summary: Markdown
-    icon: File
-    image: File
-    attachment: list[PropertyValue]
+    summary: str
+    icon: Optional[File]
+    image: Optional[File]
+    attachment: list[PropertyValueAttachment]
     following: str
     followers: str
     inbox: str
@@ -151,7 +138,7 @@ class Actor(BaseModel):
     def make_attachments(cls, attachments: {str: str}) -> list[Attachment]:
         l = []
         for key, value in attachments.items():
-            l.append(Attachment.property_value(key, Markdown(value)))
+            l.append(PropertyValueAttachment(key, str(Markdown(value))))
 
         return l
 
@@ -162,9 +149,9 @@ class Actor(BaseModel):
             url=actor.config.website.url,
             preferredUsername=actor.preferred_username,
             name=actor.display_name,
-            summary=Markdown(actor.summary),
-            icon=ImageFile.from_file(actor.avatar, f"{actor.id}/avatar"),
-            image=ImageFile.from_file(actor.header, f"{actor.id}/header"),
+            summary=str(Markdown(actor.summary)),
+            icon=ImageFile.from_file(actor.avatar, f"{actor.id}/avatar") if actor.avatar is not None else None,
+            image=ImageFile.from_file(actor.header, f"{actor.id}/header") if actor.header is not None else None,
             attachment=cls.make_attachments(actor.attachments),
             following=f"{actor.id}/following",
             followers=f"{actor.id}/followers",
@@ -182,13 +169,13 @@ class Actor(BaseModel):
 class Note(BaseModel):
     id: str
     type: str = "Note"
-    inReplyTo: Optional[str]
+    inReplyTo: Optional[str] = None
     published: datetime
     url: str
     attributedTo: str
     to: list[str] = [W3C_ACTIVITYSTREAMS_PUBLIC]
     cc: list[str] = []
-    content: Markdown
+    content: str
     attachment: list[File] = []
     tag: list[str] = []
 
@@ -208,8 +195,8 @@ class Message(BaseModel):
 class OrderedCollection(BaseModel):
     type: str = "OrderedCollection"
     totalItems: int
-    first: Optional[str]
-    last: Optional[str]
+    first: Optional[str] = None
+    last: Optional[str] = None
     prev: Optional[str] = None
     next: Optional[str] = None
     orderedItems: Optional[list] = None

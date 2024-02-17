@@ -14,7 +14,6 @@ class Website:
 class Configuration:
     def __init__(self, url: str, db: str, website: dict, actor: dict, message: dict):
         self.db = db
-
         self.url = url
         self.website = Website(**website)
         self.actor = Actor(self, **actor)
@@ -30,8 +29,8 @@ class Actor:
         private_key: str,
         display_name: str = None,
         summary: str = None,
-        avatar: str = None,
-        header: str = None,
+        avatar: str|None = None,
+        header: str|None = None,
         followings: [str] = None,
         attachments: {str: str} = None,
     ):

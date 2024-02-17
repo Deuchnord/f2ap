@@ -1,6 +1,5 @@
 import json
 import sqlite3
-import markdown
 
 from datetime import datetime, timezone
 from uuid import uuid4, UUID
@@ -163,7 +162,7 @@ class Database:
             published=datetime.fromtimestamp(published, tz=timezone.utc),
             url=url,
             attributedTo=self.config.actor.id,
-            content=model.Markdown(content),
+            content=str(model.Markdown(content)),
             cc=[self.config.actor.followers_link],
             tag=json.loads(tags),
         )

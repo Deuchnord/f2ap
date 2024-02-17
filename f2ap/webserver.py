@@ -125,7 +125,7 @@ def start_server(
         note = db.get_note(url=request_url)
         if note is not None:
             logging.debug("Note found!")
-            return ActivityJSONResponse(note.dict())
+            return ActivityJSONResponse(dict(note))
 
         return await call_next(request)
 
