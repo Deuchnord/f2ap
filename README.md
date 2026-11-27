@@ -1,3 +1,12 @@
+> [!caution]
+> **DO NOT USE THIS ON PRODUCTION.**
+>
+> This project contains several vulnerabilities that may put your website at risk. **If you still run it on your server, stop it right now**.
+>
+> **This project is not maintained anymore**. If you want to use it, please feel free to fork this repository. The `f2ap-ssrf-fix.patch` file contains patches that should fix three of the  vulnerabilities — I didn't check them.
+>
+> See [my blog post](https://deuchnord.fr/blog/38-f2ap-eol/) (in French) for more information about the situation of this project.
+
 # ![f2ap](logo.svg)
 
 f2ap (_Feed to ActivityPub_) is a web application that uses the RSS/Atom feed of your website to expose it on the Fediverse
